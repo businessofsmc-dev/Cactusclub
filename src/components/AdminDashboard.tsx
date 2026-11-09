@@ -39,7 +39,9 @@ import {
   Film,
   Image as ImageIcon,
   RefreshCw,
-  CheckCircle2
+  CheckCircle2,
+  Trophy,
+  Calendar
 } from 'lucide-react';
 import type { CannedScript, ScriptMediaTag } from '../types/crm';
 import { CANNED_SCRIPTS } from '../data/mockData';
@@ -214,7 +216,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [period, setPeriod] = useState<'yesterday' | 'today' | 'week' | 'month'>('week');
   const [earningsType, setEarningsType] = useState<'net' | 'gross'>('net');
   const [growthOpen, setGrowthOpen] = useState(true);
-  const [hoveredPoint, setHoveredPoint] = useState<{ day: string; val: number; x: number; y: number } | null>(null);
+  const [selectedChatterFilter, setSelectedChatterFilter] = useState<'all' | 'simon' | 'nella' | 'marc'>('all');
+  const [chartMetricMode, setChartMetricMode] = useState<'sales' | 'ppv'>('sales');
+  const [hoveredPoint, setHoveredPoint] = useState<{
+    day: string;
+    val: number;
+    cx: number;
+    cy: number;
+    fullDate: string;
+    topChatter: string;
+    ppvCount: number;
+    growth: string;
+    isPositive: boolean;
+    isPeak?: boolean;
+  } | null>(null);
 
   const [platform, setPlatform] = useState<'Cactusclub' | 'OnlyFans' | 'Fanvue' | 'Fansly'>('Cactusclub');
   const [platformDropdownOpen, setPlatformDropdownOpen] = useState(false);
@@ -274,16 +289,73 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     },
   }[period];
 
-  // SVG Chart points matching exemplar screenshot (Oct 25 to Oct 31)
-  const chartPoints = [
-    { day: 'Oct 25', val: 120, cx: 45, cy: 175 },
-    { day: 'Oct 26', val: 350, cx: 130, cy: 50 },
-    { day: 'Oct 27', val: 270, cx: 215, cy: 88 },
-    { day: 'Oct 28', val: 130, cx: 300, cy: 170 },
-    { day: 'Oct 29', val: 50, cx: 385, cy: 220 },
-    { day: 'Oct 30', val: 100, cx: 470, cy: 190 },
-    { day: 'Oct 31', val: 30, cx: 555, cy: 235 },
-  ];
+  // Enhanced dataset for Employee Sales Chart
+  const employeeSalesData = {
+    all: [
+      { day: 'Oct 25', val: 135, cx: 45, cy: 175, fullDate: 'Ven 25 Oct', topChatter: 'SIMON', ppvCount: 9, growth: '+12.4%', isPositive: true },
+      { day: 'Oct 26', val: 368, cx: 130, cy: 50, fullDate: 'Sam 26 Oct', topChatter: 'SIMON', ppvCount: 24, growth: '+28.5%', isPositive: true, isPeak: true },
+      { day: 'Oct 27', val: 300, cx: 215, cy: 88, fullDate: 'Dim 27 Oct', topChatter: 'Nella', ppvCount: 19, growth: '-18.4%', isPositive: false },
+      { day: 'Oct 28', val: 145, cx: 300, cy: 170, fullDate: 'Lun 28 Oct', topChatter: 'Marc', ppvCount: 11, growth: '-51.6%', isPositive: false },
+      { day: 'Oct 29', val: 52, cx: 385, cy: 220, fullDate: 'Mar 29 Oct', topChatter: 'Nella', ppvCount: 4, growth: '-64.1%', isPositive: false },
+      { day: 'Oct 30', val: 110, cx: 470, cy: 190, fullDate: 'Mer 30 Oct', topChatter: 'SIMON', ppvCount: 8, growth: '+111.5%', isPositive: true },
+      { day: 'Oct 31', val: 25, cx: 555, cy: 235, fullDate: 'Jeu 31 Oct', topChatter: 'Marc', ppvCount: 2, growth: '-77.2%', isPositive: false },
+    ],
+    simon: [
+      { day: 'Oct 25', val: 90, cx: 45, cy: 200, fullDate: 'Ven 25 Oct', topChatter: 'SIMON', ppvCount: 6, growth: '+15.0%', isPositive: true },
+      { day: 'Oct 26', val: 240, cx: 130, cy: 110, fullDate: 'Sam 26 Oct', topChatter: 'SIMON', ppvCount: 16, growth: '+166.7%', isPositive: true, isPeak: true },
+      { day: 'Oct 27', val: 160, cx: 215, cy: 160, fullDate: 'Dim 27 Oct', topChatter: 'SIMON', ppvCount: 10, growth: '-33.3%', isPositive: false },
+      { day: 'Oct 28', val: 85, cx: 300, cy: 205, fullDate: 'Lun 28 Oct', topChatter: 'SIMON', ppvCount: 6, growth: '-46.8%', isPositive: false },
+      { day: 'Oct 29', val: 30, cx: 385, cy: 232, fullDate: 'Mar 29 Oct', topChatter: 'SIMON', ppvCount: 2, growth: '-64.7%', isPositive: false },
+      { day: 'Oct 30', val: 75, cx: 470, cy: 210, fullDate: 'Mer 30 Oct', topChatter: 'SIMON', ppvCount: 5, growth: '+150.0%', isPositive: true },
+      { day: 'Oct 31', val: 18, cx: 555, cy: 238, fullDate: 'Jeu 31 Oct', topChatter: 'SIMON', ppvCount: 1, growth: '-76.0%', isPositive: false },
+    ],
+    nella: [
+      { day: 'Oct 25', val: 30, cx: 45, cy: 232, fullDate: 'Ven 25 Oct', topChatter: 'Nella', ppvCount: 2, growth: '+5.0%', isPositive: true },
+      { day: 'Oct 26', val: 88, cx: 130, cy: 202, fullDate: 'Sam 26 Oct', topChatter: 'Nella', ppvCount: 6, growth: '+193.3%', isPositive: true },
+      { day: 'Oct 27', val: 110, cx: 215, cy: 190, fullDate: 'Dim 27 Oct', topChatter: 'Nella', ppvCount: 7, growth: '+25.0%', isPositive: true, isPeak: true },
+      { day: 'Oct 28', val: 40, cx: 300, cy: 226, fullDate: 'Lun 28 Oct', topChatter: 'Nella', ppvCount: 3, growth: '-63.6%', isPositive: false },
+      { day: 'Oct 29', val: 15, cx: 385, cy: 240, fullDate: 'Mar 29 Oct', topChatter: 'Nella', ppvCount: 1, growth: '-62.5%', isPositive: false },
+      { day: 'Oct 30', val: 25, cx: 470, cy: 235, fullDate: 'Mer 30 Oct', topChatter: 'Nella', ppvCount: 2, growth: '+66.7%', isPositive: true },
+      { day: 'Oct 31', val: 5, cx: 555, cy: 244, fullDate: 'Jeu 31 Oct', topChatter: 'Nella', ppvCount: 1, growth: '-80.0%', isPositive: false },
+    ],
+    marc: [
+      { day: 'Oct 25', val: 15, cx: 45, cy: 240, fullDate: 'Ven 25 Oct', topChatter: 'Marc', ppvCount: 1, growth: '+0.0%', isPositive: true },
+      { day: 'Oct 26', val: 40, cx: 130, cy: 226, fullDate: 'Sam 26 Oct', topChatter: 'Marc', ppvCount: 2, growth: '+166.7%', isPositive: true, isPeak: true },
+      { day: 'Oct 27', val: 30, cx: 215, cy: 232, fullDate: 'Dim 27 Oct', topChatter: 'Marc', ppvCount: 2, growth: '-25.0%', isPositive: false },
+      { day: 'Oct 28', val: 20, cx: 300, cy: 237, fullDate: 'Lun 28 Oct', topChatter: 'Marc', ppvCount: 2, growth: '-33.3%', isPositive: false },
+      { day: 'Oct 29', val: 7, cx: 385, cy: 244, fullDate: 'Mar 29 Oct', topChatter: 'Marc', ppvCount: 1, growth: '-65.0%', isPositive: false },
+      { day: 'Oct 30', val: 10, cx: 470, cy: 242, fullDate: 'Mer 30 Oct', topChatter: 'Marc', ppvCount: 1, growth: '+42.8%', isPositive: true },
+      { day: 'Oct 31', val: 2, cx: 555, cy: 246, fullDate: 'Jeu 31 Oct', topChatter: 'Marc', ppvCount: 0, growth: '-80.0%', isPositive: false },
+    ],
+  };
+
+  const activeChartPoints = employeeSalesData[selectedChatterFilter];
+
+  const smoothCurvePath = (pts: typeof activeChartPoints) => {
+    if (pts.length === 0) return '';
+    let d = `M ${pts[0].cx},${pts[0].cy}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[i === 0 ? i : i - 1];
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = pts[i + 2] || p2;
+
+      const cp1x = p1.cx + (p2.cx - p0.cx) / 6;
+      const cp1y = p1.cy + (p2.cy - p0.cy) / 6;
+      const cp2x = p2.cx - (p3.cx - p1.cx) / 6;
+      const cp2y = p2.cy - (p3.cy - p1.cy) / 6;
+
+      d += ` C ${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2.cx},${p2.cy}`;
+    }
+    return d;
+  };
+
+  const curvePathD = smoothCurvePath(activeChartPoints);
+  const areaPathD = `${curvePathD} L ${activeChartPoints[activeChartPoints.length - 1].cx},247 L ${activeChartPoints[0].cx},247 Z`;
+  const peakChartPoint = activeChartPoints.reduce((max, p) => (p.val > max.val ? p : max), activeChartPoints[0]);
+  const totalWeeklyEmployeeSales = activeChartPoints.reduce((sum, p) => sum + p.val, 0);
+  const avgDailyEmployeeSales = (totalWeeklyEmployeeSales / activeChartPoints.length).toFixed(2);
+  const totalWeeklyPpv = activeChartPoints.reduce((sum, p) => sum + p.ppvCount, 0);
 
   // Filter scripts for dedicated inline workspace
   const filteredInlineScripts = dashboardScripts.filter((s) => {
@@ -988,8 +1060,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 }}
                 className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-black shadow-md shadow-blue-500/25 active:scale-95 transition-all flex items-center space-x-2 cursor-pointer self-start sm:self-auto"
               >
-                <Plus className="w-4 h-4" />
-                <span>{isCreatingScriptInline ? (editingScriptId ? 'Annuler l’Édition' : 'Masquer le Formulaire') : '+ Créer un Nouveau Script'}</span>
+                {isCreatingScriptInline ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                <span>{isCreatingScriptInline ? (editingScriptId ? 'Annuler l’Édition' : 'Masquer le Formulaire') : 'Créer un Nouveau Script'}</span>
               </button>
             </div>
 
@@ -1955,33 +2027,170 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div />
               </section>
 
-              {/* Card 3: Employee sales (lg:col-span-8) */}
-              <section className="lg:col-span-8 bg-white dark:bg-[#131624] rounded-2xl border border-gray-200/80 dark:border-[#1e2338] shadow-xs p-5 fade-up-2 card-lift">
-                <div className="flex items-center space-x-1.5 text-sm font-bold text-gray-900 dark:text-white mb-2">
-                  <span>Ventes par employé / chatter</span>
-                  <Info className="w-3.5 h-3.5 text-gray-400 cursor-pointer" />
+              {/* Card 3: Employee sales (lg:col-span-8) with Deluxe Hover & Animated Interactions */}
+              <section className="lg:col-span-8 bg-white dark:bg-[#131624] rounded-2xl border border-gray-200/80 dark:border-[#1e2338] shadow-xs p-5 fade-up-2 card-lift relative overflow-hidden group/chart">
+                {/* Background decorative glow on chart container */}
+                <div className="absolute top-0 right-1/4 w-72 h-32 bg-blue-500/5 blur-3xl pointer-events-none rounded-full" />
+
+                {/* Header with Live Indicator, Title, Chatter Filter & Metric Toggle */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 relative z-10">
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <span className="relative flex h-2.5 w-2.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-600"></span>
+                      </span>
+                      <h3 className="text-sm font-black text-gray-900 dark:text-white flex items-center space-x-1.5">
+                        <span>Ventes par employé / chatter</span>
+                        <span title="Graphique interactif des performances de vente par chatter">
+                          <Info className="w-3.5 h-3.5 text-gray-400 hover:text-blue-500 cursor-pointer transition-colors" />
+                        </span>
+                      </h3>
+                    </div>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                      Survolez les points ou les colonnes pour inspecter les métriques en direct
+                    </p>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    {/* Chatter Filter Switcher */}
+                    <div className="flex items-center p-1 rounded-xl bg-gray-100 dark:bg-[#1a2033] border border-gray-200/80 dark:border-[#27304b]">
+                      {[
+                        { id: 'all', label: 'Tous' },
+                        { id: 'simon', label: 'SIMON' },
+                        { id: 'nella', label: 'Nella' },
+                        { id: 'marc', label: 'Marc' },
+                      ].map((ch) => (
+                        <button
+                          key={ch.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedChatterFilter(ch.id as any);
+                            sounds.playReceive();
+                          }}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                            selectedChatterFilter === ch.id
+                              ? 'bg-blue-600 text-white shadow-xs scale-102'
+                              : 'text-gray-600 dark:text-gray-400 hover:text-blue-500'
+                          }`}
+                        >
+                          {ch.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Metric Switcher ($ vs PPV) */}
+                    <div className="hidden sm:flex items-center p-1 rounded-xl bg-gray-100 dark:bg-[#1a2033] border border-gray-200/80 dark:border-[#27304b]">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setChartMetricMode('sales');
+                          sounds.playReceive();
+                        }}
+                        className={`px-2 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                          chartMetricMode === 'sales'
+                            ? 'bg-white dark:bg-[#252f4c] text-blue-600 dark:text-blue-400 shadow-2xs'
+                            : 'text-gray-500 dark:text-gray-400 hover:text-blue-500'
+                        }`}
+                        title="Afficher les revenus en dollars"
+                      >
+                        $
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setChartMetricMode('ppv');
+                          sounds.playReceive();
+                        }}
+                        className={`px-2 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                          chartMetricMode === 'ppv'
+                            ? 'bg-white dark:bg-[#252f4c] text-blue-600 dark:text-blue-400 shadow-2xs'
+                            : 'text-gray-500 dark:text-gray-400 hover:text-blue-500'
+                        }`}
+                        title="Afficher le volume de messages PPV vendus"
+                      >
+                        PPV
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
-                {/* SVG Bézier Curve Chart matching exemplar screenshot */}
+                {/* SVG Bézier Curve Chart Area with Deluxe Floating Tooltip */}
                 <div className="relative w-full h-64 select-none">
+                  {/* Floating Glassmorphic Tooltip Overlay */}
                   {hoveredPoint && (
                     <div
                       style={{
-                        left: `${(hoveredPoint.x / 600) * 100}%`,
-                        top: `${(hoveredPoint.y / 280) * 100}%`,
+                        left: `${(hoveredPoint.cx / 600) * 100}%`,
+                        top: `${(hoveredPoint.cy / 280) * 100}%`,
                       }}
-                      className="absolute -translate-x-1/2 -translate-y-9 px-2.5 py-1 rounded-lg bg-gray-900 text-white text-[11px] font-mono font-bold shadow-lg pointer-events-none z-10 whitespace-nowrap animate-in zoom-in-75 duration-150"
+                      className="absolute -translate-x-1/2 -translate-y-[118%] pointer-events-none z-30 whitespace-nowrap animate-in zoom-in-95 fade-in duration-150 filter drop-shadow-xl"
                     >
-                      {hoveredPoint.day}: ${hoveredPoint.val}
+                      <div className="p-3 rounded-2xl bg-[#0c101d]/95 backdrop-blur-md border border-blue-500/40 text-white text-xs shadow-2xl space-y-1.5 min-w-[175px]">
+                        <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-1 text-[10px] text-gray-400">
+                          <span className="font-semibold flex items-center space-x-1">
+                            <Calendar className="w-3 h-3 text-blue-400" />
+                            <span>{hoveredPoint.fullDate}</span>
+                          </span>
+                          <span className={`px-1.5 py-0.2 rounded font-mono font-bold text-[9px] ${
+                            hoveredPoint.isPositive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
+                          }`}>
+                            {hoveredPoint.growth}
+                          </span>
+                        </div>
+
+                        <div className="flex items-baseline justify-between pt-0.5">
+                          <span className="text-[10px] text-gray-400 font-medium">
+                            {chartMetricMode === 'sales' ? 'Ventes chat :' : 'PPV vendus :'}
+                          </span>
+                          <span className="text-base font-black font-mono text-white">
+                            {chartMetricMode === 'sales' ? `$${hoveredPoint.val.toFixed(2)}` : `${hoveredPoint.ppvCount} PPV`}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between text-[10px] pt-1 border-t border-white/5">
+                          <span className="text-gray-400">Top chatter :</span>
+                          <span className="font-bold text-amber-400 flex items-center space-x-1">
+                            <Trophy className="w-2.5 h-2.5" />
+                            <span>{hoveredPoint.topChatter} ({hoveredPoint.ppvCount} PPV)</span>
+                          </span>
+                        </div>
+
+                        {hoveredPoint.isPeak && (
+                          <div className="px-2 py-0.5 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-300 text-[9px] font-bold text-center">
+                            ⭐ Pic de la semaine
+                          </div>
+                        )}
+
+                        {/* Triangle pointer */}
+                        <div className="absolute left-1/2 -bottom-1.5 -translate-x-1/2 w-3 h-3 bg-[#0c101d] border-r border-b border-blue-500/40 rotate-45" />
+                      </div>
                     </div>
                   )}
 
+                  {/* SVG Canvas */}
                   <svg className="w-full h-full" viewBox="0 0 600 280">
                     <defs>
                       <linearGradient id="employeeAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.22" />
+                        <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.28" />
+                        <stop offset="65%" stopColor="#3b82f6" stopOpacity="0.06" />
                         <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.0" />
                       </linearGradient>
+
+                      <linearGradient id="employeeLineGrad" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="#60a5fa" />
+                        <stop offset="50%" stopColor="#2563eb" />
+                        <stop offset="100%" stopColor="#3b82f6" />
+                      </linearGradient>
+
+                      <linearGradient id="hoverColGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.14" />
+                        <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.01" />
+                      </linearGradient>
+
+                      <filter id="pointGlow" x="-50%" y="-50%" width="200%" height="200%">
+                        <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#2563eb" floodOpacity="0.5" />
+                      </filter>
                     </defs>
 
                     {/* Y-Axis Grid Lines & Labels */}
@@ -1991,80 +2200,262 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       { label: '200', y: 141 },
                       { label: '100', y: 194 },
                       { label: '0', y: 247 },
-                    ].map((grid, i) => (
-                      <g key={i}>
-                        <text
-                          x="10"
-                          y={grid.y + 4}
-                          fill="#94a3b8"
-                          fontSize="11"
-                          fontFamily="Inter, system-ui, sans-serif"
-                        >
-                          {grid.label}
-                        </text>
+                    ].map((grid, i) => {
+                      const isNearHover = hoveredPoint && Math.abs(hoveredPoint.cy - grid.y) < 35;
+                      return (
+                        <g key={i}>
+                          <text
+                            x="10"
+                            y={grid.y + 4}
+                            fill={isNearHover ? '#2563eb' : '#94a3b8'}
+                            fontSize="11"
+                            fontWeight={isNearHover ? 'bold' : 'normal'}
+                            fontFamily="Inter, system-ui, sans-serif"
+                            className="transition-colors duration-150"
+                          >
+                            {grid.label}
+                          </text>
+                          <line
+                            x1="38"
+                            y1={grid.y}
+                            x2="590"
+                            y2={grid.y}
+                            stroke={isNearHover ? '#93c5fd' : '#e2e8f0'}
+                            strokeDasharray="4 4"
+                            strokeWidth={isNearHover ? '1.5' : '1'}
+                            className="dark:stroke-[#20273f] transition-all duration-150"
+                          />
+                        </g>
+                      );
+                    })}
+
+                    {/* Active Hover Crosshair Column & Dashed Guideline */}
+                    {hoveredPoint && (
+                      <g className="animate-in fade-in duration-100 pointer-events-none">
+                        <rect
+                          x={hoveredPoint.cx - 24}
+                          y="25"
+                          width="48"
+                          height="222"
+                          fill="url(#hoverColGrad)"
+                          rx="10"
+                        />
                         <line
-                          x1="38"
-                          y1={grid.y}
-                          x2="590"
-                          y2={grid.y}
-                          stroke="#e2e8f0"
-                          strokeDasharray="4 4"
-                          className="dark:stroke-[#20273f]"
+                          x1={hoveredPoint.cx}
+                          y1="25"
+                          x2={hoveredPoint.cx}
+                          y2="247"
+                          stroke="#3b82f6"
+                          strokeWidth="1.5"
+                          strokeDasharray="3 3"
                         />
                       </g>
-                    ))}
+                    )}
 
-                    {/* Area under curve with smooth fade */}
+                    {/* Shaded Area under Bézier Curve */}
                     <path
-                      key={`area-${period}`}
-                      d="M 45,175 C 90,50 90,50 130,50 C 170,50 175,88 215,88 C 255,88 260,170 300,170 C 340,170 345,220 385,220 C 425,220 430,190 470,190 C 510,190 515,235 555,235 L 555,247 L 45,247 Z"
+                      key={`area-${selectedChatterFilter}-${period}`}
+                      d={areaPathD}
                       fill="url(#employeeAreaGrad)"
-                      className="animate-in fade-in duration-700"
+                      className="animate-in fade-in duration-700 pointer-events-none"
                     />
 
-                    {/* Blue Bézier line with drawing animation */}
+                    {/* Main Animated Bézier Path Line */}
                     <path
-                      key={`line-${period}`}
-                      d="M 45,175 C 90,50 90,50 130,50 C 170,50 175,88 215,88 C 255,88 260,170 300,170 C 340,170 345,220 385,220 C 425,220 430,190 470,190 C 510,190 515,235 555,235"
+                      key={`line-${selectedChatterFilter}-${period}`}
+                      d={curvePathD}
                       fill="none"
-                      stroke="#3b82f6"
+                      stroke="url(#employeeLineGrad)"
                       strokeWidth="3.5"
                       strokeLinecap="round"
-                      className="animate-chart-line"
+                      className="animate-chart-line pointer-events-none"
                     />
 
-                    {/* Marker points with staggered popup animation */}
-                    {chartPoints.map((pt, idx) => (
-                      <circle
-                        key={`pt-${period}-${idx}`}
-                        cx={pt.cx}
-                        cy={pt.cy}
-                        r="4.5"
-                        fill="#ffffff"
-                        stroke="#2563eb"
-                        strokeWidth="2.5"
-                        className="cursor-pointer hover:r-6.5 transition-all duration-200 animate-in zoom-in-50"
-                        style={{ animationDelay: `${idx * 90}ms` }}
-                        onMouseEnter={() => setHoveredPoint({ day: pt.day, val: pt.val, x: pt.cx, y: pt.cy })}
+                    {/* Permanent Peak Record Beacon on Peak Point */}
+                    {peakChartPoint && (
+                      <g className="pointer-events-none">
+                        <circle
+                          cx={peakChartPoint.cx}
+                          cy={peakChartPoint.cy}
+                          r="12"
+                          fill="none"
+                          stroke="#3b82f6"
+                          strokeWidth="1.5"
+                          className="animate-ping opacity-60"
+                        />
+                        <g transform={`translate(${peakChartPoint.cx}, ${peakChartPoint.cy - 14})`} className="animate-bounce" style={{ animationDuration: '2.5s' }}>
+                          <rect
+                            x="-24"
+                            y="-14"
+                            width="48"
+                            height="16"
+                            rx="8"
+                            fill="#2563eb"
+                            className="shadow-sm"
+                          />
+                          <text
+                            x="0"
+                            y="-3"
+                            textAnchor="middle"
+                            fill="#ffffff"
+                            fontSize="9"
+                            fontWeight="bold"
+                            fontFamily="Inter, system-ui, sans-serif"
+                          >
+                            👑 ${peakChartPoint.val}
+                          </text>
+                        </g>
+                      </g>
+                    )}
+
+                    {/* Interactive Marker Points with Stagger and Hover Halo */}
+                    {activeChartPoints.map((pt, idx) => {
+                      const isHovered = hoveredPoint?.day === pt.day;
+                      return (
+                        <g key={`pt-group-${idx}`}>
+                          {/* Hover Halo Rings */}
+                          {isHovered && (
+                            <>
+                              <circle
+                                cx={pt.cx}
+                                cy={pt.cy}
+                                r="16"
+                                fill="#3b82f6"
+                                fillOpacity="0.22"
+                                className="animate-ping pointer-events-none"
+                              />
+                              <circle
+                                cx={pt.cx}
+                                cy={pt.cy}
+                                r="11"
+                                fill="none"
+                                stroke="#3b82f6"
+                                strokeWidth="1.5"
+                                className="pointer-events-none"
+                              />
+                            </>
+                          )}
+
+                          {/* Center Circle Node */}
+                          <circle
+                            cx={pt.cx}
+                            cy={pt.cy}
+                            r={isHovered ? 7 : 4.5}
+                            fill={isHovered ? '#2563eb' : '#ffffff'}
+                            stroke={isHovered ? '#ffffff' : '#2563eb'}
+                            strokeWidth={isHovered ? 3 : 2.5}
+                            filter={isHovered ? 'url(#pointGlow)' : undefined}
+                            className="transition-all duration-200 pointer-events-none"
+                          />
+                        </g>
+                      );
+                    })}
+
+                    {/* Invisible Full-Column Hit Slits for effortless hover interaction */}
+                    {activeChartPoints.map((pt, idx) => (
+                      <rect
+                        key={`hit-${idx}`}
+                        x={pt.cx - 35}
+                        y="20"
+                        width="70"
+                        height="230"
+                        fill="transparent"
+                        className="cursor-pointer"
+                        onMouseEnter={() => {
+                          setHoveredPoint({
+                            day: pt.day,
+                            val: pt.val,
+                            cx: pt.cx,
+                            cy: pt.cy,
+                            fullDate: pt.fullDate,
+                            topChatter: pt.topChatter,
+                            ppvCount: pt.ppvCount,
+                            growth: pt.growth,
+                            isPositive: pt.isPositive,
+                            isPeak: pt.isPeak,
+                          });
+                          sounds.playReceive();
+                        }}
                         onMouseLeave={() => setHoveredPoint(null)}
                       />
                     ))}
 
-                    {/* X-Axis Day Labels */}
-                    {chartPoints.map((pt, idx) => (
-                      <text
-                        key={idx}
-                        x={pt.cx}
-                        y="270"
-                        textAnchor="middle"
-                        fill="#94a3b8"
-                        fontSize="11"
-                        fontFamily="Inter, system-ui, sans-serif"
-                      >
-                        {pt.day}
-                      </text>
-                    ))}
+                    {/* X-Axis Day Labels with Active Hover Dot */}
+                    {activeChartPoints.map((pt, idx) => {
+                      const isHovered = hoveredPoint?.day === pt.day;
+                      return (
+                        <g key={`x-axis-${idx}`}>
+                          <text
+                            x={pt.cx}
+                            y="270"
+                            textAnchor="middle"
+                            fill={isHovered ? '#2563eb' : '#94a3b8'}
+                            fontWeight={isHovered ? 'bold' : 'normal'}
+                            fontSize={isHovered ? '12' : '11'}
+                            fontFamily="Inter, system-ui, sans-serif"
+                            className="transition-all duration-150 select-none cursor-pointer"
+                            onMouseEnter={() => {
+                              setHoveredPoint({
+                                day: pt.day,
+                                val: pt.val,
+                                cx: pt.cx,
+                                cy: pt.cy,
+                                fullDate: pt.fullDate,
+                                topChatter: pt.topChatter,
+                                ppvCount: pt.ppvCount,
+                                growth: pt.growth,
+                                isPositive: pt.isPositive,
+                                isPeak: pt.isPeak,
+                              });
+                              sounds.playReceive();
+                            }}
+                          >
+                            {pt.day}
+                          </text>
+                          {isHovered && (
+                            <circle cx={pt.cx} cy="277" r="2.5" fill="#2563eb" className="animate-pulse" />
+                          )}
+                        </g>
+                      );
+                    })}
                   </svg>
+                </div>
+
+                {/* Live Micro-KPI Footer */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-4 mt-2 border-t border-gray-100 dark:border-[#1e2338]">
+                  <div className="p-2.5 rounded-xl bg-gray-50/80 dark:bg-[#1a2033] border border-gray-200/60 dark:border-[#27304b] flex items-center justify-between card-lift">
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Pic de Vente</span>
+                      <span className="text-xs font-mono font-black text-blue-600 dark:text-blue-400 mt-0.5 block">
+                        ${peakChartPoint.val.toFixed(2)}
+                      </span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-bold">
+                      {peakChartPoint.day}
+                    </span>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-gray-50/80 dark:bg-[#1a2033] border border-gray-200/60 dark:border-[#27304b] flex items-center justify-between card-lift">
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Moyenne Hebdo</span>
+                      <span className="text-xs font-mono font-black text-gray-900 dark:text-white mt-0.5 block">
+                        ${avgDailyEmployeeSales} / j
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-gray-400 font-medium">7 jours</span>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-gray-50/80 dark:bg-[#1a2033] border border-gray-200/60 dark:border-[#27304b] flex items-center justify-between card-lift">
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">PPV Total Générés</span>
+                      <span className="text-xs font-mono font-black text-emerald-600 dark:text-emerald-400 mt-0.5 block">
+                        {totalWeeklyPpv} PPV
+                      </span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
+                      🏆 SIMON #1
+                    </span>
+                  </div>
                 </div>
               </section>
             </div>

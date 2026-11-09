@@ -495,7 +495,7 @@ export const ScriptsModal: React.FC<ScriptsModalProps> = ({
                 }`}
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>+ Créer un Script</span>
+                <span>Créer un Script</span>
               </button>
             </div>
 
