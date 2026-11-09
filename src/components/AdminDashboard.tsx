@@ -150,7 +150,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [growthOpen, setGrowthOpen] = useState(true);
   const [hoveredPoint, setHoveredPoint] = useState<{ day: string; val: number; x: number; y: number } | null>(null);
 
-  const [platform, setPlatform] = useState<'OnlyFans' | 'Cactusclub' | 'Fanvue' | 'Fansly'>('OnlyFans');
+  const [platform, setPlatform] = useState<'Cactusclub' | 'OnlyFans' | 'Fanvue' | 'Fansly'>('Cactusclub');
   const [platformDropdownOpen, setPlatformDropdownOpen] = useState(false);
   const [ofManagerOpen, setOfManagerOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
@@ -509,23 +509,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div className="p-3" ref={platformRef}>
               <button
                 onClick={() => setPlatformDropdownOpen(!platformDropdownOpen)}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-[#f0f7ff] dark:bg-[#1a233a] border border-[#d2e7fc] dark:border-[#24355a] text-xs font-semibold cursor-pointer hover:bg-[#e6f2fe] transition-all"
+                className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-[#fdf2f8] dark:bg-[#201524] border border-[#fbcfe8] dark:border-[#381e3e] text-xs font-semibold cursor-pointer hover:bg-[#fce7f3] transition-all"
               >
                 <div className="flex items-center space-x-2 min-w-0">
-                  <div className="w-5 h-5 rounded-full bg-[#00aff0] text-white flex items-center justify-center text-[10px] font-black flex-shrink-0">
-                    of
+                  <div
+                    className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black flex-shrink-0 text-white ${
+                      platform === 'Cactusclub'
+                        ? 'bg-gradient-to-tr from-[#ec4899] to-[#c026d3]'
+                        : platform === 'OnlyFans'
+                        ? 'bg-[#00aff0]'
+                        : platform === 'Fanvue'
+                        ? 'bg-emerald-500'
+                        : 'bg-purple-600'
+                    }`}
+                  >
+                    {platform === 'Cactusclub' ? 'cc' : platform === 'OnlyFans' ? 'of' : platform.substring(0, 2).toLowerCase()}
                   </div>
                   <span className="font-bold text-gray-900 dark:text-white truncate">
                     {platform}
                   </span>
-                  <span className="w-2 h-2 rounded-full bg-[#ff4081] flex-shrink-0" />
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
                 </div>
                 <ChevronDown className="w-3.5 h-3.5 text-gray-400 flex-shrink-0 ml-1" />
               </button>
 
               {platformDropdownOpen && (
                 <div className="absolute top-26 left-3 w-50 bg-white dark:bg-[#191f33] border border-gray-200 dark:border-[#27314d] rounded-2xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95">
-                  {(['OnlyFans', 'Cactusclub', 'Fanvue', 'Fansly'] as const).map((p) => (
+                  {(['Cactusclub', 'OnlyFans', 'Fanvue', 'Fansly'] as const).map((p) => (
                     <button
                       key={p}
                       onClick={() => {
@@ -534,12 +544,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       }}
                       className={`w-full flex items-center justify-between px-3 py-1.5 text-xs text-left cursor-pointer transition-colors ${
                         platform === p
-                          ? 'bg-blue-50 dark:bg-blue-500/20 text-[#00aff0] font-bold'
+                          ? 'bg-pink-50 dark:bg-pink-500/20 text-[#ec4899] font-bold'
                           : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5'
                       }`}
                     >
-                      <span>{p}</span>
-                      {platform === p && <Check className="w-3 h-3 text-[#00aff0]" />}
+                      <div className="flex items-center space-x-2">
+                        <div
+                          className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black text-white ${
+                            p === 'Cactusclub'
+                              ? 'bg-gradient-to-tr from-[#ec4899] to-[#c026d3]'
+                              : p === 'OnlyFans'
+                              ? 'bg-[#00aff0]'
+                              : p === 'Fanvue'
+                              ? 'bg-emerald-500'
+                              : 'bg-purple-600'
+                          }`}
+                        >
+                          {p === 'Cactusclub' ? 'cc' : p === 'OnlyFans' ? 'of' : p.substring(0, 2).toLowerCase()}
+                        </div>
+                        <span>{p}</span>
+                      </div>
+                      {platform === p && <Check className="w-3 h-3 text-[#ec4899]" />}
                     </button>
                   ))}
                 </div>
@@ -1367,20 +1392,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       particleCount: 50,
                       spread: 60,
                       origin: { y: 0.35, x: 0.28 },
-                      colors: ['#00aff0', '#10b981', '#f59e0b', '#8b5cf6'],
+                      colors: ['#ec4899', '#3b82f6', '#10b981', '#f59e0b'],
                     });
                   }}
                   className="md:col-span-3 flex flex-col justify-center pr-6 md:border-r border-gray-100 dark:border-[#1c2238] cursor-pointer group"
                 >
-                  <div className="w-10 h-10 rounded-full bg-[#00aff0] text-white flex items-center justify-center text-sm font-bold shadow-xs group-hover:scale-105 transition-transform">
-                    <span className="font-extrabold tracking-tight">of</span>
+                  <div className="flex items-center space-x-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#ec4899] to-[#c026d3] text-white flex items-center justify-center text-xs font-black shadow-xs group-hover:scale-105 transition-transform">
+                      <span className="font-extrabold tracking-tight">cc</span>
+                    </div>
+                    <span className="text-xs font-bold text-gray-600 dark:text-gray-300">
+                      Total des revenus Cactusclub
+                    </span>
                   </div>
-                  <span className="text-xs text-[#00aff0] font-semibold mt-2.5">
-                    Revenus totaux Cactusclub
-                  </span>
-                  <span className="text-3xl font-extrabold font-mono text-[#00aff0] tracking-tight mt-0.5">
-                    {metricsData.total}
-                  </span>
+                  <div className="flex items-center space-x-2 mt-2">
+                    <span className="text-3xl font-extrabold font-mono text-blue-600 dark:text-blue-400 tracking-tight">
+                      {metricsData.total}
+                    </span>
+                    <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-[11px] font-black">
+                      +18.4%
+                    </span>
+                  </div>
                 </div>
 
                 {/* Column 1: Subscriptions (top) + Tips (bottom) (~3 cols) */}
