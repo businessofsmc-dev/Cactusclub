@@ -8,9 +8,14 @@ import {
   Square, 
   X, 
   Sun, 
-  Moon,
-  Sparkles,
-  Check
+  Moon, 
+  Sparkles, 
+  Check,
+  Zap,
+  ChevronDown,
+  MessageSquare,
+  DollarSign,
+  Trophy
 } from 'lucide-react';
 import type { CreatorAccount } from '../types/crm';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -29,6 +34,8 @@ interface TopNavProps {
   onSelectChatter: (name: string) => void;
   onBackToDashboard?: () => void;
   onOpenAddAccount?: () => void;
+  onSimulateFanMessage?: () => void;
+  onSimulateTip?: (amount: number) => void;
 }
 
 const LANGUAGES_LIST: { code: Language; name: string; flag: string }[] = [
@@ -51,16 +58,23 @@ export const TopNav: React.FC<TopNavProps> = ({
   onSelectChatter,
   onBackToDashboard,
   onOpenAddAccount,
+  onSimulateFanMessage,
+  onSimulateTip,
 }) => {
   const { language, setLanguage, t } = useLanguage();
   const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const [simMenuOpen, setSimMenuOpen] = useState(false);
   const langMenuRef = useRef<HTMLDivElement>(null);
+  const simMenuRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on click outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (langMenuRef.current && !langMenuRef.current.contains(e.target as Node)) {
         setLangMenuOpen(false);
+      }
+      if (simMenuRef.current && !simMenuRef.current.contains(e.target as Node)) {
+        setSimMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -236,8 +250,59 @@ export const TopNav: React.FC<TopNavProps> = ({
           })}
         </div>
 
-        {/* Global Online/Activity Counter */}
+        {/* Global Online/Activity Counter & Live Simulator */}
         <div className="flex items-center space-x-2 pl-3">
+          {/* Live Simulator Dropdown */}
+          <div className="relative" ref={simMenuRef}>
+            <button
+              onClick={() => setSimMenuOpen(!simMenuOpen)}
+              title="Test & Demo Live Events"
+              className="flex items-center space-x-1.5 px-2.5 py-0.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-[11px] font-bold cursor-pointer transition-all shadow-xs"
+            >
+              <Zap className="w-3 h-3 text-amber-400" />
+              <span>Simulate</span>
+              <ChevronDown className={`w-3 h-3 text-amber-400 transition-transform ${simMenuOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {simMenuOpen && (
+              <div className="absolute right-0 top-7 mt-1 w-56 rounded-xl bg-[#181d2e] border border-gray-700 shadow-2xl py-1 z-50 animate-in fade-in zoom-in-95">
+                <div className="px-3 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-800">
+                  Live Event Simulator
+                </div>
+                <button
+                  onClick={() => {
+                    if (onSimulateFanMessage) onSimulateFanMessage();
+                    setSimMenuOpen(false);
+                  }}
+                  className="w-full flex items-center space-x-2 px-3 py-2 text-xs text-left text-gray-200 hover:bg-blue-600/20 hover:text-blue-300 cursor-pointer transition-colors"
+                >
+                  <MessageSquare className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Incoming Fan Message</span>
+                </button>
+                <button
+                  onClick={() => {
+                    if (onSimulateTip) onSimulateTip(50);
+                    setSimMenuOpen(false);
+                  }}
+                  className="w-full flex items-center space-x-2 px-3 py-2 text-xs text-left text-gray-200 hover:bg-emerald-600/20 hover:text-emerald-300 cursor-pointer transition-colors"
+                >
+                  <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Incoming $50 Tip</span>
+                </button>
+                <button
+                  onClick={() => {
+                    if (onSimulateTip) onSimulateTip(150);
+                    setSimMenuOpen(false);
+                  }}
+                  className="w-full flex items-center space-x-2 px-3 py-2 text-xs text-left text-gray-200 hover:bg-amber-600/20 hover:text-amber-300 cursor-pointer transition-colors"
+                >
+                  <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Whale Fan Spend ($150)</span>
+                </button>
+              </div>
+            )}
+          </div>
+
           <div className="flex items-center space-x-1 px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono-numbers text-[11px] font-semibold">
             <Sparkles className="w-3 h-3 text-blue-400" />
             <span>{t.activeFans}</span>

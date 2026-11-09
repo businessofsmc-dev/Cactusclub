@@ -118,3 +118,4 @@ graph TD
 * **Routage History API** : Les URLs directes `/admin` et `/messages` sont capturées immédiatement par `getViewFromLocation()` sans librairie tierce superflue, éliminant les problèmes de compatibilité React 19.
 * **Navigation $O(1)$** : Les messages et les profils sont indexés par identifiant (`messagesMap[selectedFanId]`), garantissant zéro latence lors du basculement d'un fan à un autre au milieu d'une centaine de conversations actives.
 * **Audio Web Natif** : Aucun fichier `.mp3` lourd à télécharger ; les sons d'envoi, de réception et d'encaissement de pourboires sont générés en direct par synthèse de fréquences via l'oscillateur Web Audio natif.
+
