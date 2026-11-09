@@ -223,18 +223,7 @@ export const TopNav: React.FC<TopNavProps> = ({
 
       {/* Secondary Sub-Bar: Home & Agency Chatter Team Tabs */}
       <div className="flex items-center justify-between px-3 py-1 bg-[#1e2336] text-xs border-t border-[#2a3047]">
-        <div className="flex items-center space-x-1.5 overflow-x-auto no-scrollbar py-0.5">
-          {/* CactusClub Official Logo Return Button */}
-          {onBackToDashboard && (
-            <button
-              onClick={onBackToDashboard}
-              title="CactusClub - Retour au Tableau de bord"
-              className="flex items-center px-2 py-0.5 mr-1 rounded-md bg-white hover:opacity-90 transition-all cursor-pointer shadow-xs"
-            >
-              <img src="/cactusclub-logo.png" alt="CactusClub" className="h-4 w-auto object-contain" />
-            </button>
-          )}
-
+        <div className="flex items-center space-x-1 overflow-x-auto no-scrollbar py-0.5">
           {/* Home Active Tab */}
           <button 
             onClick={onBackToDashboard}

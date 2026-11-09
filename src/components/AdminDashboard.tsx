@@ -103,6 +103,60 @@ const PRESET_DASHBOARD_MEDIA_TAGS = [
   },
 ];
 
+const AnimatedCounter: React.FC<{
+  value: string | number;
+  duration?: number;
+  prefix?: string;
+  suffix?: string;
+  className?: string;
+}> = ({ value, duration = 850, prefix = '', suffix = '', className = '' }) => {
+  const strVal = String(value);
+  const hasDollar = strVal.includes('$');
+  const cleanNum = parseFloat(strVal.replace(/[^0-9.]/g, '')) || 0;
+  const isDecimal = strVal.includes('.');
+  const [displayVal, setDisplayVal] = useState(cleanNum);
+
+  useEffect(() => {
+    let startTimestamp: number | null = null;
+    const startValue = displayVal;
+    const diff = cleanNum - startValue;
+
+    if (diff === 0) return;
+
+    let frameId: number;
+    const step = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const elapsed = timestamp - startTimestamp;
+      const progress = Math.min(elapsed / duration, 1);
+      // easeOutExpo curve
+      const ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      const current = startValue + diff * ease;
+      setDisplayVal(current);
+
+      if (progress < 1) {
+        frameId = requestAnimationFrame(step);
+      } else {
+        setDisplayVal(cleanNum);
+      }
+    };
+
+    frameId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frameId);
+  }, [cleanNum, duration]);
+
+  const formatted = isDecimal
+    ? displayVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : Math.round(displayVal).toLocaleString('en-US');
+
+  return (
+    <span className={className}>
+      {hasDollar ? '$' : prefix}
+      {formatted}
+      {suffix}
+    </span>
+  );
+};
+
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onNavigateToMessages,
   sfwMode,
@@ -452,8 +506,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
         <div className="flex items-center space-x-3">
           {/* Operational status pill */}
-          <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#ecfdf5] dark:bg-emerald-950/40 text-[#00b074] font-semibold text-xs border border-emerald-200/60 dark:border-emerald-800/40">
-            <span className="w-2 h-2 rounded-full bg-[#00b074] animate-pulse"></span>
+          <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#ecfdf5] dark:bg-emerald-950/40 text-[#00b074] font-semibold text-xs border border-emerald-200/60 dark:border-emerald-800/40 shadow-xs hover:border-emerald-400 transition-colors">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00b074] opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00b074]"></span>
+            </span>
             <span>Opérationnel</span>
           </div>
 
@@ -509,36 +566,32 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div className="p-3" ref={platformRef}>
               <button
                 onClick={() => setPlatformDropdownOpen(!platformDropdownOpen)}
-                className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-white dark:bg-[#1a2033] border border-gray-200 dark:border-[#27314d] text-xs font-semibold cursor-pointer hover:border-pink-300 dark:hover:border-pink-500/40 transition-all shadow-2xs"
+                className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-[#fdf2f8] dark:bg-[#201524] border border-[#fbcfe8] dark:border-[#381e3e] text-xs font-semibold cursor-pointer hover:bg-[#fce7f3] transition-all"
               >
                 <div className="flex items-center space-x-2 min-w-0">
-                  {platform === 'Cactusclub' ? (
-                    <img src="/cactusclub-logo.png" alt="CactusClub" className="h-5.5 w-auto object-contain" />
-                  ) : (
-                    <div className="flex items-center space-x-2">
-                      <div
-                        className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black flex-shrink-0 text-white ${
-                          platform === 'OnlyFans'
-                            ? 'bg-[#00aff0]'
-                            : platform === 'Fanvue'
-                            ? 'bg-emerald-500'
-                            : 'bg-purple-600'
-                        }`}
-                      >
-                        {platform === 'OnlyFans' ? 'of' : platform.substring(0, 2).toLowerCase()}
-                      </div>
-                      <span className="font-bold text-gray-900 dark:text-white truncate">
-                        {platform}
-                      </span>
-                    </div>
-                  )}
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0 ml-1" />
+                  <div
+                    className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black flex-shrink-0 text-white ${
+                      platform === 'Cactusclub'
+                        ? 'bg-gradient-to-tr from-[#ec4899] to-[#c026d3]'
+                        : platform === 'OnlyFans'
+                        ? 'bg-[#00aff0]'
+                        : platform === 'Fanvue'
+                        ? 'bg-emerald-500'
+                        : 'bg-purple-600'
+                    }`}
+                  >
+                    {platform === 'Cactusclub' ? 'cc' : platform === 'OnlyFans' ? 'of' : platform.substring(0, 2).toLowerCase()}
+                  </div>
+                  <span className="font-bold text-gray-900 dark:text-white truncate">
+                    {platform}
+                  </span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
                 </div>
                 <ChevronDown className="w-3.5 h-3.5 text-gray-400 flex-shrink-0 ml-1" />
               </button>
 
               {platformDropdownOpen && (
-                <div className="absolute top-26 left-3 w-52 bg-white dark:bg-[#191f33] border border-gray-200 dark:border-[#27314d] rounded-2xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95">
+                <div className="absolute top-26 left-3 w-50 bg-white dark:bg-[#191f33] border border-gray-200 dark:border-[#27314d] rounded-2xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95">
                   {(['Cactusclub', 'OnlyFans', 'Fanvue', 'Fansly'] as const).map((p) => (
                     <button
                       key={p}
@@ -553,24 +606,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       }`}
                     >
                       <div className="flex items-center space-x-2">
-                        {p === 'Cactusclub' ? (
-                          <img src="/cactusclub-logo.png" alt="CactusClub" className="h-4.5 w-auto object-contain" />
-                        ) : (
-                          <>
-                            <div
-                              className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black text-white ${
-                                p === 'OnlyFans'
-                                  ? 'bg-[#00aff0]'
-                                  : p === 'Fanvue'
-                                  ? 'bg-emerald-500'
-                                  : 'bg-purple-600'
-                              }`}
-                            >
-                              {p === 'OnlyFans' ? 'of' : p.substring(0, 2).toLowerCase()}
-                            </div>
-                            <span>{p}</span>
-                          </>
-                        )}
+                        <div
+                          className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black text-white ${
+                            p === 'Cactusclub'
+                              ? 'bg-gradient-to-tr from-[#ec4899] to-[#c026d3]'
+                              : p === 'OnlyFans'
+                              ? 'bg-[#00aff0]'
+                              : p === 'Fanvue'
+                              ? 'bg-emerald-500'
+                              : 'bg-purple-600'
+                          }`}
+                        >
+                          {p === 'Cactusclub' ? 'cc' : p === 'OnlyFans' ? 'of' : p.substring(0, 2).toLowerCase()}
+                        </div>
+                        <span>{p}</span>
                       </div>
                       {platform === p && <Check className="w-3 h-3 text-[#ec4899]" />}
                     </button>
@@ -812,37 +861,37 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
 
             {/* KPI Cards Strip */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-              <div className="p-3.5 rounded-2xl bg-white dark:bg-[#131624] border border-gray-200/90 dark:border-[#1e2338] shadow-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 fade-up-1">
+              <div className="p-3.5 rounded-2xl bg-white dark:bg-[#131624] border border-gray-200/90 dark:border-[#1e2338] shadow-xs card-lift">
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Scripts Actifs</span>
                 <span className="text-xl font-black text-gray-900 dark:text-white font-mono-numbers mt-1 block">
-                  {dashboardScripts.length}
+                  <AnimatedCounter value={dashboardScripts.length} />
                 </span>
                 <span className="text-[10px] text-blue-500 font-bold">Disponibles pour les chatters</span>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-white dark:bg-[#131624] border border-gray-200/90 dark:border-[#1e2338] shadow-xs">
+              <div className="p-3.5 rounded-2xl bg-white dark:bg-[#131624] border border-gray-200/90 dark:border-[#1e2338] shadow-xs card-lift">
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Tags avec Vidéos</span>
-                <span className="text-xl font-black text-purple-600 dark:text-purple-400 font-mono-numbers mt-1 block flex items-center space-x-1">
+                <span className="text-xl font-black text-purple-600 dark:text-purple-400 font-mono-numbers mt-1 flex items-center space-x-1">
                   <span>🎬</span>
-                  <span>{videoTagsCount}</span>
+                  <AnimatedCounter value={videoTagsCount} />
                 </span>
                 <span className="text-[10px] text-purple-500 font-bold">Clips & teasers PPV</span>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-white dark:bg-[#131624] border border-gray-200/90 dark:border-[#1e2338] shadow-xs">
+              <div className="p-3.5 rounded-2xl bg-white dark:bg-[#131624] border border-gray-200/90 dark:border-[#1e2338] shadow-xs card-lift">
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Tags avec Photos</span>
-                <span className="text-xl font-black text-pink-600 dark:text-pink-400 font-mono-numbers mt-1 block flex items-center space-x-1">
+                <span className="text-xl font-black text-pink-600 dark:text-pink-400 font-mono-numbers mt-1 flex items-center space-x-1">
                   <span>📸</span>
-                  <span>{photoTagsCount}</span>
+                  <AnimatedCounter value={photoTagsCount} />
                 </span>
                 <span className="text-[10px] text-pink-500 font-bold">Photos & packs exclusifs</span>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-white dark:bg-[#131624] border border-gray-200/90 dark:border-[#1e2338] shadow-xs">
+              <div className="p-3.5 rounded-2xl bg-white dark:bg-[#131624] border border-gray-200/90 dark:border-[#1e2338] shadow-xs card-lift">
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Prix Moyen Tag PPV</span>
                 <span className="text-xl font-black text-amber-500 font-mono-numbers mt-1 block">
-                  ${avgPpvPrice}
+                  <AnimatedCounter value={avgPpvPrice} prefix="$" />
                 </span>
                 <span className="text-[10px] text-amber-500 font-bold">Revenu moyen par envoi</span>
               </div>
@@ -1215,7 +1264,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               {filteredInlineScripts.map((script) => (
                 <div
                   key={script.id}
-                  className="p-4 rounded-2xl bg-white dark:bg-[#131624] border border-gray-200/90 dark:border-[#1e2338] shadow-xs flex flex-col justify-between hover:border-blue-500/50 transition-all group"
+                  className="p-4 rounded-2xl bg-white dark:bg-[#131624] border border-gray-200/90 dark:border-[#1e2338] shadow-xs flex flex-col justify-between card-lift hover:border-blue-500/50 transition-all duration-200 group"
                 >
                   <div>
                     <div className="flex items-start justify-between gap-2 mb-2">
@@ -1241,7 +1290,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           {script.mediaTags.map((mt) => (
                             <div
                               key={mt.id}
-                              className="group/tag flex items-center justify-between p-1.5 rounded-lg bg-white dark:bg-[#131624] border border-gray-200/80 dark:border-[#20273d] hover:border-blue-400/60 transition-colors"
+                              className="group/tag flex items-center justify-between p-1.5 rounded-lg bg-white dark:bg-[#131624] border border-gray-200/80 dark:border-[#20273d] hover:border-blue-400/60 transition-all duration-150 hover:scale-[1.01]"
                             >
                               <div
                                 onClick={() => handleStartEditScript(script, mt.id)}
@@ -1342,7 +1391,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           /* ============================================================== */
           <main className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 relative bg-[#f4f5f8] dark:bg-[#0c0e17]">
             {/* Card 1: Creator earnings overview */}
-            <section className="bg-white dark:bg-[#131624] rounded-2xl border border-gray-200/80 dark:border-[#1e2338] shadow-xs p-5">
+            <section className="bg-white dark:bg-[#131624] rounded-2xl border border-gray-200/80 dark:border-[#1e2338] shadow-xs p-5 fade-up-1 card-lift">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-100 dark:border-[#1c2238] gap-3">
                 <div className="flex items-center space-x-2 text-sm font-bold text-gray-900 dark:text-white">
                   <span>Aperçu des revenus créatrice</span>
@@ -1397,16 +1446,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   onClick={() => {
                     sounds.playCash();
                     confetti({
-                      particleCount: 50,
-                      spread: 60,
+                      particleCount: 60,
+                      spread: 65,
                       origin: { y: 0.35, x: 0.28 },
                       colors: ['#ec4899', '#3b82f6', '#10b981', '#f59e0b'],
                     });
                   }}
-                  className="md:col-span-3 flex flex-col justify-center pr-6 md:border-r border-gray-100 dark:border-[#1c2238] cursor-pointer group"
+                  className="md:col-span-3 flex flex-col justify-center pr-6 md:border-r border-gray-100 dark:border-[#1c2238] cursor-pointer group transition-transform duration-200 hover:scale-[1.02]"
                 >
                   <div className="flex items-center space-x-2.5">
-                    <div className="bg-white p-1 rounded-xl shadow-xs border border-gray-100 dark:border-gray-800">
+                    <div className="bg-white p-1 rounded-xl shadow-xs border border-gray-100 dark:border-gray-800 transition-transform group-hover:scale-105 duration-200">
                       <img src="/cactusclub-logo.png" alt="CactusClub" className="h-6 w-auto object-contain" />
                     </div>
                     <span className="text-xs font-bold text-gray-600 dark:text-gray-300">
@@ -1414,10 +1463,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </span>
                   </div>
                   <div className="flex items-center space-x-2 mt-2">
-                    <span className="text-3xl font-extrabold font-mono text-blue-600 dark:text-blue-400 tracking-tight">
-                      {metricsData.total}
-                    </span>
-                    <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-[11px] font-black">
+                    <AnimatedCounter
+                      value={metricsData.total}
+                      className="text-3xl font-extrabold font-mono text-blue-600 dark:text-blue-400 tracking-tight"
+                    />
+                    <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-[11px] font-black animate-pulse">
                       +18.4%
                     </span>
                   </div>
@@ -1425,26 +1475,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                 {/* Column 1: Subscriptions (top) + Tips (bottom) (~3 cols) */}
                 <div className="md:col-span-3 px-5 py-2 space-y-4 md:border-r border-gray-100 dark:border-[#1c2238]">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between group/metric hover:bg-gray-50/80 dark:hover:bg-white/5 p-1 rounded-xl transition-colors">
                     <div>
                       <div className="text-lg font-bold font-mono text-gray-900 dark:text-white">
-                        {metricsData.subs}
+                        <AnimatedCounter value={metricsData.subs} />
                       </div>
                       <div className="text-[11px] text-gray-400 font-medium">Abonnements</div>
                     </div>
-                    <div className="w-8 h-8 rounded-lg bg-[#e6faf3] dark:bg-emerald-950/40 text-[#00b074] flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-lg bg-[#e6faf3] dark:bg-emerald-950/40 text-[#00b074] flex items-center justify-center transition-transform group-hover/metric:scale-110 duration-200">
                       <Bookmark className="w-4 h-4" />
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between group/metric hover:bg-gray-50/80 dark:hover:bg-white/5 p-1 rounded-xl transition-colors">
                     <div>
                       <div className="text-lg font-bold font-mono text-gray-900 dark:text-white">
-                        {metricsData.tips}
+                        <AnimatedCounter value={metricsData.tips} />
                       </div>
                       <div className="text-[11px] text-gray-400 font-medium">Pourboires (Tips)</div>
                     </div>
-                    <div className="w-8 h-8 rounded-lg bg-[#edf5fe] dark:bg-blue-950/40 text-[#2b7fff] flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-lg bg-[#edf5fe] dark:bg-blue-950/40 text-[#2b7fff] flex items-center justify-center transition-transform group-hover/metric:scale-110 duration-200">
                       <Lightbulb className="w-4 h-4" />
                     </div>
                   </div>
@@ -1452,26 +1502,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                 {/* Column 2: Posts (top) + Referrals (bottom) (~3 cols) */}
                 <div className="md:col-span-3 px-5 py-2 space-y-4 md:border-r border-gray-100 dark:border-[#1c2238]">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between group/metric hover:bg-gray-50/80 dark:hover:bg-white/5 p-1 rounded-xl transition-colors">
                     <div>
                       <div className="text-lg font-bold font-mono text-gray-900 dark:text-white">
-                        {metricsData.posts}
+                        <AnimatedCounter value={metricsData.posts} />
                       </div>
                       <div className="text-[11px] text-gray-400 font-medium">Publications (Posts)</div>
                     </div>
-                    <div className="w-8 h-8 rounded-lg bg-[#e6fbfb] dark:bg-cyan-950/40 text-[#00c5c5] flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-lg bg-[#e6fbfb] dark:bg-cyan-950/40 text-[#00c5c5] flex items-center justify-center transition-transform group-hover/metric:scale-110 duration-200">
                       <FileCheck className="w-4 h-4" />
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between group/metric hover:bg-gray-50/80 dark:hover:bg-white/5 p-1 rounded-xl transition-colors">
                     <div>
                       <div className="text-lg font-bold font-mono text-gray-900 dark:text-white">
-                        {metricsData.referrals}
+                        <AnimatedCounter value={metricsData.referrals} />
                       </div>
                       <div className="text-[11px] text-gray-400 font-medium">Parrainages</div>
                     </div>
-                    <div className="w-8 h-8 rounded-lg bg-[#fff2ed] dark:bg-orange-950/40 text-[#ff7043] flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-lg bg-[#fff2ed] dark:bg-orange-950/40 text-[#ff7043] flex items-center justify-center transition-transform group-hover/metric:scale-110 duration-200">
                       <Share2 className="w-4 h-4" />
                     </div>
                   </div>
@@ -1479,26 +1529,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                 {/* Column 3: Messages (top) + Streams (bottom) (~3 cols) */}
                 <div className="md:col-span-3 pl-5 py-2 space-y-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between group/metric hover:bg-gray-50/80 dark:hover:bg-white/5 p-1 rounded-xl transition-colors">
                     <div>
                       <div className="text-lg font-bold font-mono text-gray-900 dark:text-white">
-                        {metricsData.messages}
+                        <AnimatedCounter value={metricsData.messages} />
                       </div>
                       <div className="text-[11px] text-gray-400 font-medium">Messages Privés</div>
                     </div>
-                    <div className="w-8 h-8 rounded-lg bg-[#f5eefd] dark:bg-purple-950/40 text-[#a855f7] flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-lg bg-[#f5eefd] dark:bg-purple-950/40 text-[#a855f7] flex items-center justify-center transition-transform group-hover/metric:scale-110 duration-200">
                       <MessageSquare className="w-4 h-4" />
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between group/metric hover:bg-gray-50/80 dark:hover:bg-white/5 p-1 rounded-xl transition-colors">
                     <div>
                       <div className="text-lg font-bold font-mono text-gray-900 dark:text-white">
-                        {metricsData.streams}
+                        <AnimatedCounter value={metricsData.streams} />
                       </div>
                       <div className="text-[11px] text-gray-400 font-medium">Lives / Streams</div>
                     </div>
-                    <div className="w-8 h-8 rounded-lg bg-[#eef2ff] dark:bg-indigo-950/40 text-[#4f46e5] flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-lg bg-[#eef2ff] dark:bg-indigo-950/40 text-[#4f46e5] flex items-center justify-center transition-transform group-hover/metric:scale-110 duration-200">
                       <Radio className="w-4 h-4" />
                     </div>
                   </div>
@@ -1509,24 +1559,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {/* Middle Row: My shifts + Employee sales */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
               {/* Card 2: My shifts (lg:col-span-4) */}
-              <section className="lg:col-span-4 bg-white dark:bg-[#131624] rounded-2xl border border-gray-200/80 dark:border-[#1e2338] shadow-xs p-5 flex flex-col justify-between">
+              <section className="lg:col-span-4 bg-white dark:bg-[#131624] rounded-2xl border border-gray-200/80 dark:border-[#1e2338] shadow-xs p-5 flex flex-col justify-between fade-up-2 card-lift">
                 <div className="flex items-center space-x-1.5 text-sm font-bold text-gray-900 dark:text-white">
                   <span>Mes créneaux de travail</span>
                   <Info className="w-3.5 h-3.5 text-gray-400 cursor-pointer" />
                 </div>
 
-                {/* Cute Minimal Document Mascot matching exemplar */}
-                <div className="py-12 flex flex-col items-center justify-center text-center">
+                {/* Cute Minimal Document Mascot with breathing float animation */}
+                <div className="py-12 flex flex-col items-center justify-center text-center animate-float">
                   <div className="relative mb-2">
-                    {/* Radiating Rays */}
+                    {/* Radiating Rays with pulse */}
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center space-x-1 text-gray-400">
-                      <span className="text-[10px] transform -rotate-45">/</span>
-                      <span className="text-[11px]">|</span>
-                      <span className="text-[10px] transform rotate-45">\</span>
+                      <span className="text-[10px] transform -rotate-45 animate-pulse">/</span>
+                      <span className="text-[11px] animate-pulse" style={{ animationDelay: '150ms' }}>|</span>
+                      <span className="text-[10px] transform rotate-45 animate-pulse" style={{ animationDelay: '300ms' }}>\</span>
                     </div>
 
                     {/* Paper Outline */}
-                    <div className="w-14 h-18 rounded-xl bg-white dark:bg-[#191f33] border-2 border-gray-900 dark:border-gray-200 flex flex-col items-center justify-center shadow-xs">
+                    <div className="w-14 h-18 rounded-xl bg-white dark:bg-[#191f33] border-2 border-gray-900 dark:border-gray-200 flex flex-col items-center justify-center shadow-md transition-transform hover:scale-105 duration-200">
                       {/* Face */}
                       <div className="flex items-center space-x-2 mb-1.5">
                         <span className="w-2 h-0.5 bg-gray-900 dark:bg-white rounded-full"></span>
@@ -1542,7 +1592,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </section>
 
               {/* Card 3: Employee sales (lg:col-span-8) */}
-              <section className="lg:col-span-8 bg-white dark:bg-[#131624] rounded-2xl border border-gray-200/80 dark:border-[#1e2338] shadow-xs p-5">
+              <section className="lg:col-span-8 bg-white dark:bg-[#131624] rounded-2xl border border-gray-200/80 dark:border-[#1e2338] shadow-xs p-5 fade-up-2 card-lift">
                 <div className="flex items-center space-x-1.5 text-sm font-bold text-gray-900 dark:text-white mb-2">
                   <span>Ventes par employé / chatter</span>
                   <Info className="w-3.5 h-3.5 text-gray-400 cursor-pointer" />
@@ -1556,7 +1606,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         left: `${(hoveredPoint.x / 600) * 100}%`,
                         top: `${(hoveredPoint.y / 280) * 100}%`,
                       }}
-                      className="absolute -translate-x-1/2 -translate-y-9 px-2.5 py-1 rounded-lg bg-gray-900 text-white text-[11px] font-mono font-bold shadow-lg pointer-events-none z-10 whitespace-nowrap"
+                      className="absolute -translate-x-1/2 -translate-y-9 px-2.5 py-1 rounded-lg bg-gray-900 text-white text-[11px] font-mono font-bold shadow-lg pointer-events-none z-10 whitespace-nowrap animate-in zoom-in-75 duration-150"
                     >
                       {hoveredPoint.day}: ${hoveredPoint.val}
                     </div>
@@ -1565,7 +1615,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <svg className="w-full h-full" viewBox="0 0 600 280">
                     <defs>
                       <linearGradient id="employeeAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.18" />
+                        <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.22" />
                         <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.0" />
                       </linearGradient>
                     </defs>
@@ -1600,32 +1650,37 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </g>
                     ))}
 
-                    {/* Area under curve */}
+                    {/* Area under curve with smooth fade */}
                     <path
+                      key={`area-${period}`}
                       d="M 45,175 C 90,50 90,50 130,50 C 170,50 175,88 215,88 C 255,88 260,170 300,170 C 340,170 345,220 385,220 C 425,220 430,190 470,190 C 510,190 515,235 555,235 L 555,247 L 45,247 Z"
                       fill="url(#employeeAreaGrad)"
+                      className="animate-in fade-in duration-700"
                     />
 
-                    {/* Blue Bézier line */}
+                    {/* Blue Bézier line with drawing animation */}
                     <path
+                      key={`line-${period}`}
                       d="M 45,175 C 90,50 90,50 130,50 C 170,50 175,88 215,88 C 255,88 260,170 300,170 C 340,170 345,220 385,220 C 425,220 430,190 470,190 C 510,190 515,235 555,235"
                       fill="none"
                       stroke="#3b82f6"
                       strokeWidth="3.5"
                       strokeLinecap="round"
+                      className="animate-chart-line"
                     />
 
-                    {/* Marker points */}
+                    {/* Marker points with staggered popup animation */}
                     {chartPoints.map((pt, idx) => (
                       <circle
-                        key={idx}
+                        key={`pt-${period}-${idx}`}
                         cx={pt.cx}
                         cy={pt.cy}
                         r="4.5"
                         fill="#ffffff"
                         stroke="#2563eb"
                         strokeWidth="2.5"
-                        className="cursor-pointer hover:r-6.5 transition-all"
+                        className="cursor-pointer hover:r-6.5 transition-all duration-200 animate-in zoom-in-50"
+                        style={{ animationDelay: `${idx * 90}ms` }}
                         onMouseEnter={() => setHoveredPoint({ day: pt.day, val: pt.val, x: pt.cx, y: pt.cy })}
                         onMouseLeave={() => setHoveredPoint(null)}
                       />
@@ -1651,7 +1706,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
 
             {/* Card 4: Scheduled hours */}
-            <section className="bg-white dark:bg-[#131624] rounded-2xl border border-gray-200/80 dark:border-[#1e2338] shadow-xs p-5">
+            <section className="bg-white dark:bg-[#131624] rounded-2xl border border-gray-200/80 dark:border-[#1e2338] shadow-xs p-5 fade-up-3 card-lift">
               <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-[#1c2238]">
                 <div className="flex items-center space-x-1.5 text-sm font-bold text-gray-900 dark:text-white">
                   <span>Horaires & shifts planifiés</span>
@@ -1661,9 +1716,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4">
-                <div className="p-3.5 rounded-xl bg-gray-50/80 dark:bg-[#181d2e] border border-gray-200/60 dark:border-[#222940] flex items-center justify-between">
+                <div className="p-3.5 rounded-xl bg-gray-50/80 dark:bg-[#181d2e] border border-gray-200/60 dark:border-[#222940] flex items-center justify-between card-lift transition-all hover:border-blue-400/50 hover:shadow-md cursor-pointer">
                   <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 rounded-full bg-blue-500 text-white font-bold text-xs flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-blue-500 text-white font-bold text-xs flex items-center justify-center shadow-xs">
                       M
                     </div>
                     <div>
@@ -1671,14 +1726,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <div className="text-[11px] text-gray-500">08:00 - 16:00</div>
                     </div>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-bold">
-                    En cours
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-bold flex items-center space-x-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                    <span>En cours</span>
                   </span>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-gray-50/80 dark:bg-[#181d2e] border border-gray-200/60 dark:border-[#222940] flex items-center justify-between">
+                <div className="p-3.5 rounded-xl bg-gray-50/80 dark:bg-[#181d2e] border border-gray-200/60 dark:border-[#222940] flex items-center justify-between card-lift transition-all hover:border-blue-400/50 hover:shadow-md cursor-pointer">
                   <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 rounded-full bg-indigo-500 text-white font-bold text-xs flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-indigo-500 text-white font-bold text-xs flex items-center justify-center shadow-xs">
                       V
                     </div>
                     <div>
@@ -1691,9 +1747,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </span>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-gray-50/80 dark:bg-[#181d2e] border border-gray-200/60 dark:border-[#222940] flex items-center justify-between">
+                <div className="p-3.5 rounded-xl bg-gray-50/80 dark:bg-[#181d2e] border border-gray-200/60 dark:border-[#222940] flex items-center justify-between card-lift transition-all hover:border-blue-400/50 hover:shadow-md cursor-pointer">
                   <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 rounded-full bg-purple-500 text-white font-bold text-xs flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-purple-500 text-white font-bold text-xs flex items-center justify-center shadow-xs">
                       A
                     </div>
                     <div>

@@ -106,11 +106,16 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
         <div className="relative z-10 max-w-lg">
           {/* Official Cactusclub Brand Logo */}
           <div className="flex items-center space-x-3 mb-8">
-            <div className="bg-white p-2.5 rounded-2xl shadow-xl shadow-black/15 flex items-center">
-              <img src="/cactusclub-logo.png" alt="CactusClub" className="h-9 w-auto object-contain" />
+            <div className="w-11 h-11 rounded-2xl bg-white flex items-center justify-center shadow-lg shadow-black/10">
+              <span className="font-black text-xl text-[#00aff0] tracking-tighter">
+                CC
+              </span>
             </div>
             <div className="flex flex-col">
-              <span className="text-[11px] uppercase font-black tracking-widest text-white/80">
+              <span className="text-3xl font-black tracking-tight text-white leading-none">
+                Cactusclub
+              </span>
+              <span className="text-[10px] uppercase font-bold tracking-widest text-white/75 mt-1">
                 VIP Creator Network
               </span>
             </div>
@@ -144,8 +149,11 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
       {/* ========================================================= */}
       <div className="flex-1 flex flex-col justify-center items-center px-6 sm:px-12 relative bg-white overflow-y-auto">
         {/* Mobile Header Branding (Visible on small screens only) */}
-        <div className="lg:hidden flex items-center justify-center mb-8 bg-white p-2 rounded-xl shadow-xs">
-          <img src="/cactusclub-logo.png" alt="CactusClub" className="h-8 w-auto object-contain" />
+        <div className="lg:hidden flex items-center space-x-2 mb-8">
+          <div className="w-9 h-9 rounded-xl bg-[#00aff0] flex items-center justify-center text-white font-black text-base shadow-md">
+            CC
+          </div>
+          <span className="text-2xl font-black text-[#00aff0]">Cactusclub</span>
         </div>
 
         {/* Central Container: exactly 380px - 420px as on desktop OnlyFans */}
