@@ -41,7 +41,9 @@ import {
   RefreshCw,
   CheckCircle2,
   Trophy,
-  Calendar
+  Calendar,
+  Sun,
+  Moon
 } from 'lucide-react';
 import type { CannedScript, ScriptMediaTag } from '../types/crm';
 import { CANNED_SCRIPTS } from '../data/mockData';
@@ -168,6 +170,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onNavigateToMessages,
   sfwMode,
   onToggleSfw,
+  darkMode,
+  onToggleDarkMode,
   onOpenVault,
   onOpenBroadcast,
   onOpenSettings,
@@ -728,7 +732,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           {/* SFW toggle switch */}
           <div className="flex items-center space-x-1.5">
-            <span className="text-xs font-semibold text-gray-500">SFW</span>
+            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">SFW</span>
             <button
               onClick={onToggleSfw}
               className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
@@ -742,6 +746,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               />
             </button>
           </div>
+
+          {/* Dark Mode Toggle Button */}
+          <button
+            onClick={onToggleDarkMode}
+            title={darkMode ? 'Passer en mode clair' : 'Passer en mode sombre'}
+            className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-[#f0f2f5] dark:bg-[#1b2033] hover:bg-gray-200 dark:hover:bg-[#252d47] text-gray-700 dark:text-gray-200 text-xs font-semibold transition-all cursor-pointer border border-transparent dark:border-[#2c3554] shadow-2xs"
+          >
+            {darkMode ? (
+              <>
+                <Sun className="w-3.5 h-3.5 text-amber-400 animate-spin" style={{ animationDuration: '10s' }} />
+                <span>Clair</span>
+              </>
+            ) : (
+              <>
+                <Moon className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Sombre</span>
+              </>
+            )}
+          </button>
 
           {/* Notification bell */}
           <button className="p-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 cursor-pointer">
@@ -993,6 +1016,32 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           {/* Sidebar Footer */}
           <div className="p-3 border-t border-gray-100 dark:border-[#1c2238] space-y-1 text-xs text-gray-500 dark:text-gray-400">
+            <button
+              onClick={onToggleDarkMode}
+              className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-all cursor-pointer group"
+            >
+              <div className="flex items-center space-x-2.5">
+                {darkMode ? (
+                  <Sun className="w-4 h-4 text-amber-400 group-hover:rotate-45 transition-transform" />
+                ) : (
+                  <Moon className="w-4 h-4 text-indigo-500 group-hover:-rotate-12 transition-transform" />
+                )}
+                <span className="font-medium text-gray-700 dark:text-gray-200">
+                  {darkMode ? 'Mode Clair' : 'Mode Sombre'}
+                </span>
+              </div>
+              <span
+                className={`w-7 h-4 rounded-full relative transition-colors ${
+                  darkMode ? 'bg-indigo-600' : 'bg-gray-200'
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow-2xs transition-all ${
+                    darkMode ? 'right-0.5' : 'left-0.5'
+                  }`}
+                />
+              </span>
+            </button>
             <button
               onClick={onOpenSettings}
               className="w-full flex items-center space-x-2.5 px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-all cursor-pointer"
@@ -2220,10 +2269,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             y1={grid.y}
                             x2="590"
                             y2={grid.y}
-                            stroke={isNearHover ? '#93c5fd' : '#e2e8f0'}
+                            stroke={darkMode ? (isNearHover ? '#3b82f6' : '#1e263d') : (isNearHover ? '#93c5fd' : '#e2e8f0')}
                             strokeDasharray="4 4"
                             strokeWidth={isNearHover ? '1.5' : '1'}
-                            className="dark:stroke-[#20273f] transition-all duration-150"
+                            className="transition-all duration-150"
                           />
                         </g>
                       );
@@ -2341,7 +2390,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             cx={pt.cx}
                             cy={pt.cy}
                             r={isHovered ? 7 : 4.5}
-                            fill={isHovered ? '#2563eb' : '#ffffff'}
+                            fill={isHovered ? '#2563eb' : darkMode ? '#131624' : '#ffffff'}
                             stroke={isHovered ? '#ffffff' : '#2563eb'}
                             strokeWidth={isHovered ? 3 : 2.5}
                             filter={isHovered ? 'url(#pointGlow)' : undefined}

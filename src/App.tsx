@@ -75,9 +75,27 @@ function DashboardApp() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Global & Theme State
-  const [darkMode, setDarkMode] = useState<boolean>(false);
+  // Global & Theme State (persisted in localStorage)
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('cactus_dark_mode');
+      return saved ? JSON.parse(saved) : false;
+    } catch {
+      return false;
+    }
+  });
   const [sfwMode, setSfwMode] = useState<boolean>(false);
+
+  const handleToggleDarkMode = () => {
+    setDarkMode((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('cactus_dark_mode', JSON.stringify(next));
+      } catch { }
+      return next;
+    });
+    sounds.playReceive();
+  };
 
   // Accounts & Shift Operators
   const [accounts, setAccounts] = useState<CreatorAccount[]>(CREATOR_ACCOUNTS);
@@ -246,12 +264,14 @@ function DashboardApp() {
     url: '',
   });
 
-  // Sync dark mode class on <html>
+  // Sync dark mode class on <html> and <body>
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
+      document.body.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
+      document.body.classList.remove('dark');
     }
   }, [darkMode]);
 
@@ -1050,7 +1070,7 @@ function DashboardApp() {
   };
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#f3f4f8] dark:bg-[#0c0e17] font-sans antialiased">
+    <div className={`${darkMode ? 'dark ' : ''}flex flex-col h-screen w-screen overflow-hidden bg-[#f3f4f8] dark:bg-[#0c0e17] font-sans antialiased transition-colors duration-200`}>
       {/* Toast notifications */}
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
 
@@ -1063,7 +1083,7 @@ function DashboardApp() {
           sfwMode={sfwMode}
           onToggleSfw={() => setSfwMode(!sfwMode)}
           darkMode={darkMode}
-          onToggleDarkMode={() => setDarkMode(!darkMode)}
+          onToggleDarkMode={handleToggleDarkMode}
           onOpenVault={() => setIsVaultOpen(true)}
           scripts={scripts}
           onAddScript={handleAddScript}
@@ -1083,7 +1103,7 @@ function DashboardApp() {
             sfwMode={sfwMode}
             onToggleSfw={() => setSfwMode(!sfwMode)}
             darkMode={darkMode}
-            onToggleDarkMode={() => setDarkMode(!darkMode)}
+            onToggleDarkMode={handleToggleDarkMode}
             chatters={CHATTER_TEAM}
             activeChatter={activeChatter}
             onSelectChatter={setActiveChatter}
@@ -1166,7 +1186,7 @@ function DashboardApp() {
           onUpdateFanUser={handleUpdateFanUser}
           onOpenLightbox={(url: string, title?: string, price?: number) => setLightboxData({ isOpen: true, url, title, price })}
           darkMode={darkMode}
-          onToggleDarkMode={() => setDarkMode(!darkMode)}
+          onToggleDarkMode={handleToggleDarkMode}
         />
       ) : (
         /* VIEW 4: ONLYFANS AUTHENTICATION LANDING PAGE */
