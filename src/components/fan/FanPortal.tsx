@@ -65,7 +65,7 @@ export const FanPortal: React.FC<FanPortalProps> = ({
   darkMode,
   onToggleDarkMode,
 }) => {
-  const [activeTab, setActiveTab] = useState<'creators' | 'posts' | 'feed' | 'chat' | 'subscribe'>('creators');
+  const [activeTab, setActiveTab] = useState<'posts' | 'creators' | 'feed' | 'chat' | 'subscribe'>('posts');
   const [posts, setPosts] = useState<CreatorPost[]>(INITIAL_CREATOR_POSTS);
 
   // Scroll references
@@ -304,21 +304,21 @@ export const FanPortal: React.FC<FanPortalProps> = ({
             {/* FIRST POSITION: HOME ICON CIRCLE */}
             <div
               onClick={() => {
-                setActiveTab('creators');
+                setActiveTab('posts');
                 sounds.playReceive();
                 setTimeout(() => {
                   mainScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
                 }, 30);
               }}
-              title="Retour à l'accueil des créatrices"
+              title="Fil d'actualité des publications"
               className={`flex flex-col items-center flex-shrink-0 group cursor-pointer transition-all duration-200 ${
-                activeTab === 'creators' ? 'scale-105' : 'hover:scale-102 opacity-90 hover:opacity-100'
+                activeTab === 'posts' ? 'scale-105' : 'hover:scale-102 opacity-90 hover:opacity-100'
               }`}
             >
               <div className="relative p-0.5">
                 <div
                   className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full p-0.5 transition-all duration-300 flex items-center justify-center ${
-                    activeTab === 'creators'
+                    activeTab === 'posts'
                       ? 'bg-gradient-to-tr from-pink-500 via-purple-500 to-indigo-500 ring-2 ring-pink-500 ring-offset-2 dark:ring-offset-[#131624] shadow-lg shadow-pink-500/30'
                       : 'bg-gradient-to-tr from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-700 group-hover:from-pink-400 group-hover:to-purple-500'
                   }`}
@@ -333,7 +333,7 @@ export const FanPortal: React.FC<FanPortalProps> = ({
               <div className="mt-1.5 text-center flex flex-col items-center">
                 <span
                   className={`text-[11px] font-bold truncate max-w-[80px] ${
-                    activeTab === 'creators'
+                    activeTab === 'posts'
                       ? 'text-pink-600 dark:text-pink-400 font-extrabold'
                       : 'text-gray-800 dark:text-gray-200'
                   }`}
@@ -341,7 +341,7 @@ export const FanPortal: React.FC<FanPortalProps> = ({
                   Accueil
                 </span>
                 <span className="mt-0.5 text-[9px] px-2 py-0.5 rounded-md bg-gray-100 dark:bg-white/5 text-gray-500 font-medium">
-                  Modèles
+                  Posts
                 </span>
               </div>
             </div>
@@ -426,17 +426,6 @@ export const FanPortal: React.FC<FanPortalProps> = ({
       <nav className="bg-white dark:bg-[#131624] border-b border-gray-200 dark:border-[#1f2438] px-4 sm:px-6 flex items-center justify-between text-xs font-bold flex-shrink-0 z-10 shadow-xs">
         <div className="flex items-center space-x-1 sm:space-x-2 overflow-x-auto no-scrollbar">
           <button
-            onClick={handleOpenAllCreators}
-            className={`py-3 px-3.5 border-b-2 transition-all cursor-pointer flex items-center space-x-2 flex-shrink-0 ${activeTab === 'creators'
-              ? 'border-pink-600 text-pink-600 dark:text-pink-400 bg-pink-50/50 dark:bg-pink-500/5'
-              : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
-          >
-            <Users className="w-4 h-4 text-pink-500" />
-            <span>⭐ Nos Créatrices ({creators.length})</span>
-          </button>
-
-          <button
             onClick={() => {
               setActiveTab('posts');
               sounds.playReceive();
@@ -445,12 +434,23 @@ export const FanPortal: React.FC<FanPortalProps> = ({
               }, 30);
             }}
             className={`py-3 px-3.5 border-b-2 transition-all cursor-pointer flex items-center space-x-2 flex-shrink-0 ${activeTab === 'posts'
-              ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-500/5 font-extrabold'
+              ? 'border-pink-600 text-pink-600 dark:text-pink-400 bg-pink-50/50 dark:bg-pink-500/5 font-extrabold'
               : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               }`}
           >
-            <Layers className="w-4 h-4 text-indigo-500" />
+            <Layers className="w-4 h-4 text-pink-500" />
             <span>📰 Posts ({posts.length})</span>
+          </button>
+
+          <button
+            onClick={handleOpenAllCreators}
+            className={`py-3 px-3.5 border-b-2 transition-all cursor-pointer flex items-center space-x-2 flex-shrink-0 ${activeTab === 'creators'
+              ? 'border-pink-600 text-pink-600 dark:text-pink-400 bg-pink-50/50 dark:bg-pink-500/5'
+              : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+          >
+            <Users className="w-4 h-4 text-pink-500" />
+            <span>⭐ Nos Créatrices ({creators.length})</span>
           </button>
 
           <button
