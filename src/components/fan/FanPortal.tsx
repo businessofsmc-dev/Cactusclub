@@ -17,7 +17,8 @@ import {
   Clock,
   CheckCircle2,
   Home,
-  Layers
+  Layers,
+  ShoppingBag
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { sounds } from '../../utils/sound';
@@ -29,6 +30,7 @@ import { FanSubscribeModal } from './FanSubscribeModal';
 import { FanTipModal } from './FanTipModal';
 import { FanWalletModal } from './FanWalletModal';
 import { FanCommentsModal } from './FanCommentsModal';
+import { FanShopView } from './FanShopView';
 
 interface FanPortalProps {
   creator: CreatorAccount;
@@ -65,7 +67,7 @@ export const FanPortal: React.FC<FanPortalProps> = ({
   darkMode,
   onToggleDarkMode,
 }) => {
-  const [activeTab, setActiveTab] = useState<'posts' | 'creators' | 'feed' | 'chat' | 'subscribe'>('posts');
+  const [activeTab, setActiveTab] = useState<'posts' | 'creators' | 'shop' | 'feed' | 'chat' | 'subscribe'>('posts');
   const [posts, setPosts] = useState<CreatorPost[]>(INITIAL_CREATOR_POSTS);
 
   // Scroll references
@@ -455,6 +457,24 @@ export const FanPortal: React.FC<FanPortalProps> = ({
 
           <button
             onClick={() => {
+              setActiveTab('shop');
+              sounds.playReceive();
+              setTimeout(() => {
+                mainScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+              }, 30);
+            }}
+            className={`py-3 px-3.5 border-b-2 transition-all cursor-pointer flex items-center space-x-2 flex-shrink-0 ${activeTab === 'shop'
+              ? 'border-purple-600 text-purple-600 dark:text-purple-400 bg-purple-50/50 dark:bg-purple-500/5 font-extrabold'
+              : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+          >
+            <ShoppingBag className="w-4 h-4 text-purple-500" />
+            <span>🛍️ Boutique VIP</span>
+            <span className="px-1.5 py-0.2 rounded-full bg-pink-500 text-white font-black text-[9px]">HOT</span>
+          </button>
+
+          <button
+            onClick={() => {
               setActiveTab('feed');
               sounds.playReceive();
             }}
@@ -807,6 +827,17 @@ export const FanPortal: React.FC<FanPortalProps> = ({
               })}
             </div>
           </div>
+        )}
+
+        {/* VIEW: BOUTIQUE VIP (Lingerie, Chaussures, Fouets, Sextoys, Romance) */}
+        {activeTab === 'shop' && (
+          <FanShopView
+            fanUser={fanUser}
+            onTopUpWallet={onTopUpWallet}
+            onOpenWalletModal={() => setIsWalletOpen(true)}
+            onStartChatWithCreator={(cId) => handleStartChatWithCreator(cId)}
+            onOpenLightbox={onOpenLightbox}
+          />
         )}
 
         {/* VIEW 2: ACTIVE CREATOR PROFILE SHOWCASE BANNER & PUBLICATIONS FEED */}
