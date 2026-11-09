@@ -11,6 +11,7 @@ import { BroadcastModal } from './components/BroadcastModal';
 import { GifModal } from './components/GifModal';
 import { ScheduleModal } from './components/ScheduleModal';
 import { AddAccountModal } from './components/AddAccountModal';
+import { SettingsModal } from './components/SettingsModal';
 import { MediaLightbox } from './components/MediaLightbox';
 import { ToastContainer } from './components/Toast';
 import { sounds } from './utils/sound';
@@ -158,6 +159,7 @@ function DashboardApp() {
   const [isGifOpen, setIsGifOpen] = useState(false);
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
   const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Lightbox state
   const [lightboxData, setLightboxData] = useState<{ isOpen: boolean; url: string; title?: string; price?: number }>({
@@ -568,6 +570,7 @@ function DashboardApp() {
           onOpenVault={() => setIsVaultOpen(true)}
           onOpenScripts={() => setIsScriptsOpen(true)}
           onOpenBroadcast={() => setIsBroadcastOpen(true)}
+          onOpenSettings={() => setIsSettingsOpen(true)}
         />
       ) : (
         /* VIEW 2: MESSAGES PRO LIVE CHAT WORKSTATION */
@@ -687,6 +690,11 @@ function DashboardApp() {
         isOpen={isAddAccountOpen}
         onClose={() => setIsAddAccountOpen(false)}
         onAddAccount={handleAddAccount}
+      />
+
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
       />
 
       <MediaLightbox

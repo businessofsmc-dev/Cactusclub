@@ -37,6 +37,8 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import type { Language } from '../i18n/translations';
+import confetti from 'canvas-confetti';
+import { sounds } from '../utils/sound';
 
 interface AdminDashboardProps {
   onNavigateToMessages: () => void;
@@ -47,6 +49,7 @@ interface AdminDashboardProps {
   onOpenVault: () => void;
   onOpenScripts: () => void;
   onOpenBroadcast: () => void;
+  onOpenSettings?: () => void;
 }
 
 const LANGUAGES_LIST: { code: Language; name: string; flag: string }[] = [
@@ -65,6 +68,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onOpenVault,
   onOpenScripts,
   onOpenBroadcast,
+  onOpenSettings,
 }) => {
   const { language, setLanguage, t } = useLanguage();
   const [period, setPeriod] = useState<'yesterday' | 'today' | 'week' | 'month'>('week');
@@ -362,7 +366,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
         {/* Sidebar Footer */}
         <div className="p-3 border-t border-gray-100 dark:border-[#1c2238] space-y-1.5 text-xs text-gray-500 dark:text-gray-400">
-          <button className="w-full flex items-center space-x-2 px-2 py-1 rounded-lg hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer">
+          <button 
+            onClick={onOpenSettings}
+            className="w-full flex items-center space-x-2 px-2 py-1 rounded-lg hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
+          >
             <Settings className="w-3.5 h-3.5" />
             <span>{t.settings}</span>
           </button>
@@ -524,10 +531,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
         </header>
 
-        {/* Dashboard Body Scroll Area */}
-        <main className="flex-1 overflow-y-auto p-5 space-y-4">
+        {/* Dashboard Body Scroll Area with Ambient Dynamic Glow */}
+        <main className="flex-1 overflow-y-auto p-5 space-y-4 relative">
+          {/* Subtle Dynamic Ambient Mesh & Lights */}
+          <div className="absolute top-10 right-20 w-96 h-96 bg-blue-500/8 dark:bg-blue-600/12 rounded-full blur-3xl pointer-events-none -z-0 animate-mesh" />
+          <div className="absolute bottom-20 left-10 w-80 h-80 bg-indigo-500/8 dark:bg-purple-600/8 rounded-full blur-3xl pointer-events-none -z-0" />
+
           {/* Card 1: Creator Earnings Overview */}
-          <section className="bg-white dark:bg-[#131624] rounded-2xl border border-gray-200/90 dark:border-[#1e2338] shadow-xs p-5">
+          <section className="bg-white dark:bg-[#131624] rounded-2xl border border-gray-200/90 dark:border-[#1e2338] shadow-xs p-5 relative z-10 fade-up-1 card-lift">
             {/* Overview Header & Filter Controls */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-100 dark:border-[#1c2238] gap-3">
               <div className="flex items-center space-x-2">
@@ -544,7 +555,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div className="relative cursor-pointer">
                   <button 
                     onClick={() => setEarningsType(earningsType === 'net' ? 'gross' : 'net')}
-                    className="flex items-center space-x-1 px-3 py-1 rounded-lg bg-gray-50 dark:bg-[#1b2033] border border-gray-200 dark:border-[#252c42] text-xs font-semibold text-gray-700 dark:text-gray-300"
+                    className="flex items-center space-x-1 px-3 py-1 rounded-lg bg-gray-50 dark:bg-[#1b2033] border border-gray-200 dark:border-[#252c42] text-xs font-semibold text-gray-700 dark:text-gray-300 hover:border-blue-500/40 transition-colors"
                   >
                     <span>{earningsType === 'net' ? t.netEarnings : t.grossEarnings}</span>
                     <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
@@ -564,10 +575,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     return (
                       <button
                         key={p}
-                        onClick={() => setPeriod(p)}
+                        onClick={() => {
+                          setPeriod(p);
+                          sounds.playReceive();
+                        }}
                         className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
                           isActive
-                            ? 'bg-white dark:bg-[#252b45] text-blue-600 dark:text-blue-400 font-bold shadow-xs'
+                            ? 'bg-white dark:bg-[#252b45] text-blue-600 dark:text-blue-400 font-bold shadow-xs scale-102'
                             : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
                         }`}
                       >
@@ -581,25 +595,45 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
             {/* Metrics Breakdown Grid */}
             <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-4 pt-5 items-center">
-              {/* Highlight Big Total */}
-              <div className="lg:col-span-2 flex flex-col justify-center pr-4 border-r border-gray-100 dark:border-[#1c2238]">
+              {/* Highlight Big Total (Interactive with Confetti!) */}
+              <div 
+                onClick={() => {
+                  sounds.playCash();
+                  confetti({
+                    particleCount: 65,
+                    spread: 70,
+                    origin: { y: 0.35, x: 0.28 },
+                    colors: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899']
+                  });
+                }}
+                title="Click to celebrate revenue milestone!"
+                className="lg:col-span-2 flex flex-col justify-center pr-4 border-r border-gray-100 dark:border-[#1c2238] group cursor-pointer"
+              >
                 <div className="flex items-center space-x-2.5 mb-2">
-                  <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-md shadow-blue-500/30">
+                  <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-md shadow-blue-500/30 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
                     <span className="font-black text-xs">OF</span>
                   </div>
                   <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
                     {t.totalEarnings}
                   </span>
                 </div>
-                <div className="text-3xl font-black font-mono-numbers text-blue-600 dark:text-blue-400 tracking-tight">
-                  {metricsData.total}
+                <div className="flex items-baseline space-x-2">
+                  <div 
+                    key={period}
+                    className="text-3xl font-black font-mono-numbers text-blue-600 dark:text-blue-400 tracking-tight group-hover:scale-102 transition-transform duration-200 animate-in fade-in zoom-in-95"
+                  >
+                    {metricsData.total}
+                  </div>
+                  <span className="text-[11px] font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">
+                    ↗ +18.4%
+                  </span>
                 </div>
               </div>
 
               {/* Subscriptions */}
-              <div className="flex items-center space-x-3 p-2 rounded-xl">
+              <div className="flex items-center space-x-3 p-2 rounded-xl card-lift hover:bg-gray-50/80 dark:hover:bg-[#181d2f] cursor-pointer">
                 <div className="flex-1">
-                  <div className="text-base font-bold font-mono-numbers text-gray-900 dark:text-white">
+                  <div key={period} className="text-base font-bold font-mono-numbers text-gray-900 dark:text-white animate-in fade-in">
                     {metricsData.subs}
                   </div>
                   <span className="text-[11px] text-gray-500 dark:text-gray-400">
@@ -612,9 +646,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
 
               {/* Posts */}
-              <div className="flex items-center space-x-3 p-2 rounded-xl">
+              <div className="flex items-center space-x-3 p-2 rounded-xl card-lift hover:bg-gray-50/80 dark:hover:bg-[#181d2f] cursor-pointer">
                 <div className="flex-1">
-                  <div className="text-base font-bold font-mono-numbers text-gray-900 dark:text-white">
+                  <div key={period} className="text-base font-bold font-mono-numbers text-gray-900 dark:text-white animate-in fade-in">
                     {metricsData.posts}
                   </div>
                   <span className="text-[11px] text-gray-500 dark:text-gray-400">
@@ -626,25 +660,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               </div>
 
-              {/* Messages (Dominant!) */}
-              <div className="flex items-center space-x-3 p-2 rounded-xl bg-purple-500/5 dark:bg-purple-500/10 border border-purple-500/15">
+              {/* Messages (Dominant! with subtle pulse) */}
+              <div className="flex items-center space-x-3 p-2 rounded-xl bg-purple-500/5 dark:bg-purple-500/10 border border-purple-500/20 card-lift hover:bg-purple-500/15 cursor-pointer">
                 <div className="flex-1">
-                  <div className="text-base font-bold font-mono-numbers text-purple-600 dark:text-purple-400">
+                  <div key={period} className="text-base font-bold font-mono-numbers text-purple-600 dark:text-purple-400 animate-in fade-in">
                     {metricsData.messages}
                   </div>
                   <span className="text-[11px] text-purple-500 font-semibold">
                     {t.messagesEarnings}
                   </span>
                 </div>
-                <div className="w-8 h-8 rounded-full bg-purple-500/20 text-purple-500 flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 rounded-full bg-purple-500/20 text-purple-500 flex items-center justify-center flex-shrink-0 shadow-xs">
                   <MessageSquare className="w-4 h-4" />
                 </div>
               </div>
 
               {/* Tips */}
-              <div className="flex items-center space-x-3 p-2 rounded-xl">
+              <div className="flex items-center space-x-3 p-2 rounded-xl card-lift hover:bg-gray-50/80 dark:hover:bg-[#181d2f] cursor-pointer">
                 <div className="flex-1">
-                  <div className="text-base font-bold font-mono-numbers text-gray-900 dark:text-white">
+                  <div key={period} className="text-base font-bold font-mono-numbers text-gray-900 dark:text-white animate-in fade-in">
                     {metricsData.tips}
                   </div>
                   <span className="text-[11px] text-gray-500 dark:text-gray-400">
@@ -657,9 +691,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
 
               {/* Referrals & Streams */}
-              <div className="flex items-center space-x-3 p-2 rounded-xl">
+              <div className="flex items-center space-x-3 p-2 rounded-xl card-lift hover:bg-gray-50/80 dark:hover:bg-[#181d2f] cursor-pointer">
                 <div className="flex-1">
-                  <div className="text-base font-bold font-mono-numbers text-gray-900 dark:text-white">
+                  <div key={period} className="text-base font-bold font-mono-numbers text-gray-900 dark:text-white animate-in fade-in">
                     {metricsData.referrals}
                   </div>
                   <span className="text-[11px] text-gray-500 dark:text-gray-400">
@@ -676,7 +710,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           {/* Lower Grid: Shifts (Left) and Employee Sales Curve (Right) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
             {/* Card 2: My Shifts (Col 4) */}
-            <section className="lg:col-span-4 bg-white dark:bg-[#131624] rounded-2xl border border-gray-200/90 dark:border-[#1e2338] shadow-xs p-5 flex flex-col justify-between">
+            <section className="lg:col-span-4 bg-white dark:bg-[#131624] rounded-2xl border border-gray-200/90 dark:border-[#1e2338] shadow-xs p-5 flex flex-col justify-between relative z-10 fade-up-2 card-lift">
               <div className="flex items-center space-x-2">
                 <h3 className="text-xs font-bold text-gray-900 dark:text-white">
                   {t.myShifts}
@@ -686,15 +720,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
               {/* Illustration and No Data State (Matches screenshot) */}
               <div className="my-10 flex flex-col items-center justify-center text-center">
-                <div className="relative mb-3">
-                  <div className="w-16 h-20 rounded-xl bg-gray-50 dark:bg-[#1b2033] border-2 border-dashed border-gray-300 dark:border-[#2b334d] flex flex-col items-center justify-center shadow-xs">
+                <div className="relative mb-3 group cursor-pointer">
+                  <div className="w-16 h-20 rounded-xl bg-gray-50 dark:bg-[#1b2033] border-2 border-dashed border-gray-300 dark:border-[#2b334d] flex flex-col items-center justify-center shadow-xs group-hover:border-blue-500/60 group-hover:scale-105 transition-all duration-300">
                     <div className="w-7 h-1.5 bg-blue-500 rounded-full mb-1"></div>
                     <div className="w-5 h-1.5 bg-gray-400 rounded-full mb-2"></div>
                     <div className="text-sm font-bold text-gray-400 font-mono tracking-widest">
                       _ _
                     </div>
                   </div>
-                  <span className="absolute -top-1 -right-1 text-xs text-amber-500">✨</span>
+                  <span className="absolute -top-1 -right-1 text-xs text-amber-500 animate-bounce">✨</span>
                 </div>
                 <span className="text-xs font-bold text-gray-500 dark:text-gray-400">
                   {t.noData}
@@ -707,14 +741,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               {/* Action Button */}
               <button 
                 onClick={onNavigateToMessages}
-                className="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition-all cursor-pointer"
+                className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-500/20 active:scale-98 transition-all cursor-pointer flex items-center justify-center space-x-1.5"
               >
-                Launch Operator Workstation →
+                <span>Launch Operator Workstation</span>
+                <span>→</span>
               </button>
             </section>
 
             {/* Card 3: Employee Sales Area Curve Chart (Col 8) */}
-            <section className="lg:col-span-8 bg-white dark:bg-[#131624] rounded-2xl border border-gray-200/90 dark:border-[#1e2338] shadow-xs p-5 relative">
+            <section className="lg:col-span-8 bg-white dark:bg-[#131624] rounded-2xl border border-gray-200/90 dark:border-[#1e2338] shadow-xs p-5 relative z-10 fade-up-3 card-lift">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-2">
                   <h3 className="text-xs font-bold text-gray-900 dark:text-white">
@@ -758,7 +793,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <svg className="w-full h-full" viewBox="0 0 600 280">
                     <defs>
                       <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.25" />
+                        <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.28" />
                         <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.0" />
                       </linearGradient>
                     </defs>
@@ -787,10 +822,36 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </g>
                     ))}
 
+                    {/* Interactive Vertical Guideline */}
+                    {hoveredPoint && (
+                      <line
+                        x1={hoveredPoint.x}
+                        y1="25"
+                        x2={hoveredPoint.x}
+                        y2="250"
+                        stroke="#3b82f6"
+                        strokeDasharray="3 3"
+                        strokeWidth="1.5"
+                        className="opacity-75"
+                      />
+                    )}
+
                     {/* Smooth Area Path */}
                     <path
                       d="M 30,195 C 75,45 75,45 120,45 C 165,45 165,90 210,90 C 255,90 255,190 300,190 C 345,190 345,245 390,245 C 435,245 435,205 480,205 C 525,205 525,252 570,252 L 570,250 L 30,250 Z"
                       fill="url(#areaGradient)"
+                    />
+
+                    {/* Pulsing Radar Ring on Peak Day (Oct 26) */}
+                    <circle
+                      cx="120"
+                      cy="45"
+                      r="12"
+                      fill="none"
+                      stroke="#3b82f6"
+                      strokeWidth="1.5"
+                      className="animate-ping opacity-60"
+                      style={{ transformOrigin: '120px 45px' }}
                     />
 
                     {/* Smooth Line Curve */}
@@ -800,6 +861,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       stroke="#3b82f6"
                       strokeWidth="3.5"
                       strokeLinecap="round"
+                      className="animate-chart-line"
                     />
 
                     {/* Data Points on Curve */}
@@ -812,7 +874,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         fill="#ffffff"
                         stroke="#2563eb"
                         strokeWidth="2.5"
-                        className="cursor-pointer hover:r-6 transition-all"
+                        className="cursor-pointer hover:r-6.5 transition-all duration-200"
                         onMouseEnter={() => setHoveredPoint({ day: pt.day, val: pt.val, x: pt.cx, y: pt.cy })}
                         onMouseLeave={() => setHoveredPoint(null)}
                       />
@@ -834,13 +896,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     ))}
                   </svg>
 
-                  {/* Floating Tooltip */}
+                  {/* Floating Holographic Tooltip */}
                   {hoveredPoint && (
                     <div
-                      style={{ left: `${(hoveredPoint.x / 600) * 100}%`, top: `${(hoveredPoint.y / 280) * 100 - 15}%` }}
-                      className="absolute -translate-x-1/2 -translate-y-full px-2.5 py-1 rounded-lg bg-gray-900 text-white text-[11px] font-mono-numbers font-bold shadow-xl pointer-events-none z-10"
+                      style={{ left: `${(hoveredPoint.x / 600) * 100}%`, top: `${(hoveredPoint.y / 280) * 100 - 18}%` }}
+                      className="absolute -translate-x-1/2 -translate-y-full px-3 py-1.5 rounded-xl bg-gray-950/90 dark:bg-[#1a2138]/95 backdrop-blur-md text-white text-xs font-mono-numbers font-bold shadow-2xl border border-blue-500/40 pointer-events-none z-20 animate-in fade-in zoom-in-90 duration-150 flex items-center space-x-1.5"
                     >
-                      <span>{hoveredPoint.day}: ${hoveredPoint.val}</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
+                      <span>{hoveredPoint.day}:</span>
+                      <span className="text-emerald-400">${hoveredPoint.val}</span>
                     </div>
                   )}
                 </div>
@@ -886,7 +950,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
 
           {/* Card 4: Scheduled Hours */}
-          <section className="bg-white dark:bg-[#131624] rounded-2xl border border-gray-200/90 dark:border-[#1e2338] shadow-xs p-5">
+          <section className="bg-white dark:bg-[#131624] rounded-2xl border border-gray-200/90 dark:border-[#1e2338] shadow-xs p-5 relative z-10 fade-up-4 card-lift">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-[#1c2238]">
               <div className="flex items-center space-x-2">
                 <Calendar className="w-3.5 h-3.5 text-blue-500" />
@@ -895,7 +959,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </h3>
                 <Info className="w-3.5 h-3.5 text-gray-400" />
               </div>
-              <span className="text-[11px] text-gray-400">Week 44 • 5 Chatters Scheduled</span>
+              <span className="text-[11px] text-gray-400 font-medium">Week 44 • 5 Chatters Scheduled</span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-3 text-xs">
@@ -908,7 +972,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               ].map((worker, i) => (
                 <div
                   key={i}
-                  className="p-3 rounded-xl bg-gray-50 dark:bg-[#1b2033] border border-gray-200/70 dark:border-[#252c42]"
+                  className="p-3 rounded-xl bg-gray-50/70 dark:bg-[#1b2033] border border-gray-200/70 dark:border-[#252c42] card-lift hover:bg-white dark:hover:bg-[#1f263d] hover:border-blue-500/40 cursor-pointer"
                 >
                   <div className="flex items-center justify-between mb-1">
                     <span className="font-bold text-gray-900 dark:text-white">{worker.name}</span>
@@ -923,17 +987,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </main>
       </div>
 
-      {/* Floating Assistant Widget (Bottom Right like in screenshot with smiley and red dot) */}
+      {/* Floating Assistant Widget (Bottom Right with smiley, red dot & floating animation) */}
       <button 
         onClick={onNavigateToMessages}
         title="Open Messages Pro Workstation"
-        className="fixed bottom-5 right-5 w-11 h-11 rounded-full bg-black text-white flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-transform z-50 cursor-pointer"
+        className="fixed bottom-6 right-6 w-12 h-12 rounded-full bg-black text-white flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all z-50 cursor-pointer animate-float"
       >
-        <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <svg className="w-5.5 h-5.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" fill="white"/>
           <path d="M9 13a3 3 0 0 0 6 0" stroke="#000" strokeWidth="2" strokeLinecap="round"/>
         </svg>
-        <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-rose-500 border-2 border-white dark:border-[#131624]"></span>
+        <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-rose-500 border-2 border-white dark:border-[#131624]"></span>
       </button>
     </div>
   );
