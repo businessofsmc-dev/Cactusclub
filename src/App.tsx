@@ -1084,9 +1084,6 @@ function DashboardApp() {
           onSubscribe={handleFanSubscribe}
           onTopUpWallet={handleTopUpWallet}
           onUpdateFanUser={handleUpdateFanUser}
-          onNavigateToOperator={() => navigateTo('messages')}
-          onNavigateToAdmin={() => navigateTo('dashboard')}
-          onNavigateToLogin={() => navigateTo('login')}
           onOpenLightbox={(url: string, title?: string, price?: number) => setLightboxData({ isOpen: true, url, title, price })}
           darkMode={darkMode}
           onToggleDarkMode={() => setDarkMode(!darkMode)}

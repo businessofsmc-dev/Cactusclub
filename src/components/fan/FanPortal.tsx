@@ -1,14 +1,14 @@
 import React, { useState, useRef } from 'react';
-import { 
-  Heart, 
-  MessageCircle, 
-  Lock, 
-  Unlock, 
-  Crown, 
-  Image as ImageIcon, 
-  Sun, 
-  Moon, 
-  Plus, 
+import {
+  Heart,
+  MessageCircle,
+  Lock,
+  Unlock,
+  Crown,
+  Image as ImageIcon,
+  Sun,
+  Moon,
+  Plus,
   Wallet,
   Sparkles,
   Users,
@@ -41,9 +41,6 @@ interface FanPortalProps {
   onSubscribe: (tier: 'free' | 'monthly' | 'quarterly' | 'vip', price: number) => void;
   onTopUpWallet: (amount: number) => void;
   onUpdateFanUser?: (user: FanUser) => void;
-  onNavigateToOperator: () => void;
-  onNavigateToAdmin: () => void;
-  onNavigateToLogin?: () => void;
   onOpenLightbox: (url: string, title?: string, price?: number) => void;
   darkMode: boolean;
   onToggleDarkMode: () => void;
@@ -62,9 +59,6 @@ export const FanPortal: React.FC<FanPortalProps> = ({
   onSubscribe,
   onTopUpWallet,
   onUpdateFanUser,
-  onNavigateToOperator,
-  onNavigateToAdmin,
-  onNavigateToLogin,
   onOpenLightbox,
   darkMode,
   onToggleDarkMode,
@@ -83,11 +77,34 @@ export const FanPortal: React.FC<FanPortalProps> = ({
   const [isWalletOpen, setIsWalletOpen] = useState(false);
   const [commentingPost, setCommentingPost] = useState<CreatorPost | null>(null);
 
-  const currentCreatorId = activeCreatorId || creator.id;
+  // Active creator state with reactive external synchronization
+  const [selectedCreatorId, setSelectedCreatorId] = useState<string>(activeCreatorId || creator.id);
 
-  // Filter posts for active creator, fallback to all if none exist
-  const creatorPosts = posts.filter((p) => p.creatorId === currentCreatorId);
-  const displayedPosts = creatorPosts.length > 0 ? creatorPosts : posts;
+  React.useEffect(() => {
+    if (activeCreatorId) {
+      setSelectedCreatorId(activeCreatorId);
+    }
+  }, [activeCreatorId]);
+
+  // Always resolve the full active creator object
+  const activeCreator = creators.find((c) => c.id === selectedCreatorId) || creators.find((c) => c.id === creator.id) || creator;
+
+  // Filter posts for active creator, fallback to posts from margot if none found
+  const creatorPosts = posts.filter((p) => p.creatorId === activeCreator.id);
+  const displayedPosts = creatorPosts.length > 0 ? creatorPosts : posts.filter((p) => p.creatorId === 'margot');
+
+  // Handle open creator profile & feed
+  const handleOpenCreatorProfile = (creatorId: string) => {
+    setSelectedCreatorId(creatorId);
+    if (onSelectCreator) {
+      onSelectCreator(creatorId);
+    }
+    setActiveTab('feed');
+    sounds.playReceive();
+    setTimeout(() => {
+      mainScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 50);
+  };
 
   // Scroll Stories horizontal strip
   const handleScrollStories = (direction: 'left' | 'right') => {
@@ -116,10 +133,10 @@ export const FanPortal: React.FC<FanPortalProps> = ({
       prev.map((p) =>
         p.id === postId
           ? {
-              ...p,
-              isLiked: !p.isLiked,
-              likesCount: p.isLiked ? p.likesCount - 1 : p.likesCount + 1,
-            }
+            ...p,
+            isLiked: !p.isLiked,
+            likesCount: p.isLiked ? p.likesCount - 1 : p.likesCount + 1,
+          }
           : p
       )
     );
@@ -149,6 +166,7 @@ export const FanPortal: React.FC<FanPortalProps> = ({
 
   // Select creator and initiate chat or prompt subscription
   const handleStartChatWithCreator = (creatorId: string) => {
+    setSelectedCreatorId(creatorId);
     if (onSelectCreator) {
       onSelectCreator(creatorId);
     }
@@ -174,43 +192,14 @@ export const FanPortal: React.FC<FanPortalProps> = ({
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#f3f4f8] dark:bg-[#0c0e17] text-gray-900 dark:text-white font-sans select-none">
       {/* Top Application Header */}
       <header className="h-14 px-4 sm:px-6 bg-white dark:bg-[#131624] border-b border-gray-200 dark:border-[#1f2438] flex items-center justify-between z-30 shadow-xs flex-shrink-0">
-        {/* Brand & Role Switcher */}
-        <div className="flex items-center space-x-3">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-pink-500 to-purple-600 flex items-center justify-center text-white shadow-md shadow-pink-500/20 font-black text-sm">
-              CC
-            </div>
-            <span className="font-black text-sm tracking-tight text-gray-900 dark:text-white">
-              CactusClub
-            </span>
+        {/* Brand */}
+        <div className="flex items-center space-x-2.5">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-pink-500 to-purple-600 flex items-center justify-center text-white shadow-md shadow-pink-500/20 font-black text-sm">
+            CC
           </div>
-
-          {/* Quick Role Switcher Pills */}
-          <div className="hidden md:flex items-center space-x-1 p-1 rounded-xl bg-gray-100 dark:bg-[#1a2033] text-xs font-semibold">
-            <span className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#252b45] text-pink-600 dark:text-pink-400 font-bold shadow-xs">
-              👑 Espace Fan
-            </span>
-            <button
-              onClick={onNavigateToOperator}
-              className="px-2.5 py-1 rounded-lg text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
-            >
-              💬 Chatter Desk ↗
-            </button>
-            <button
-              onClick={onNavigateToAdmin}
-              className="px-2.5 py-1 rounded-lg text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
-            >
-              📊 Admin ↗
-            </button>
-            {onNavigateToLogin && (
-              <button
-                onClick={onNavigateToLogin}
-                className="px-2.5 py-1 rounded-lg text-blue-500 hover:text-blue-700 dark:hover:text-blue-300 transition-colors cursor-pointer"
-              >
-                🔐 Page Connexion
-              </button>
-            )}
-          </div>
+          <span className="font-black text-base tracking-tight text-gray-900 dark:text-white">
+            CactusClub
+          </span>
         </div>
 
         {/* Fan Balance & User Controls */}
@@ -286,11 +275,10 @@ export const FanPortal: React.FC<FanPortalProps> = ({
 
           <button
             onClick={handleOpenAllCreators}
-            className={`text-xs font-bold transition-all px-2.5 py-1 rounded-lg flex items-center space-x-1 cursor-pointer ${
-              activeTab === 'creators'
+            className={`text-xs font-bold transition-all px-2.5 py-1 rounded-lg flex items-center space-x-1 cursor-pointer ${activeTab === 'creators'
                 ? 'bg-pink-500 text-white shadow-xs'
                 : 'text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10'
-            }`}
+              }`}
           >
             <span>Toutes les créatrices</span>
             <ChevronRight className="w-3.5 h-3.5" />
@@ -312,26 +300,22 @@ export const FanPortal: React.FC<FanPortalProps> = ({
             className="flex items-center space-x-4 overflow-x-auto no-scrollbar py-1 scroll-smooth w-full"
           >
             {creators.map((c) => {
-              const isSelected = c.id === currentCreatorId;
+              const isSelected = c.id === activeCreator.id;
               return (
                 <div
                   key={c.id}
-                  onClick={() => {
-                    if (onSelectCreator) onSelectCreator(c.id);
-                    sounds.playReceive();
-                  }}
-                  className={`flex flex-col items-center flex-shrink-0 group cursor-pointer transition-all duration-200 ${
-                    isSelected ? 'scale-105' : 'hover:scale-102 opacity-90 hover:opacity-100'
-                  }`}
+                  onClick={() => handleOpenCreatorProfile(c.id)}
+                  title={`Voir le profil et les publications de ${c.name}`}
+                  className={`flex flex-col items-center flex-shrink-0 group cursor-pointer transition-all duration-200 ${isSelected ? 'scale-105' : 'hover:scale-102 opacity-90 hover:opacity-100'
+                    }`}
                 >
                   {/* Avatar with Animated Gradient Story Ring */}
                   <div className="relative p-0.5">
                     <div
-                      className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full p-0.5 transition-all duration-300 ${
-                        isSelected
+                      className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full p-0.5 transition-all duration-300 ${isSelected
                           ? 'bg-gradient-to-tr from-pink-500 via-purple-500 to-amber-400 ring-2 ring-pink-500 ring-offset-2 dark:ring-offset-[#131624] shadow-lg shadow-pink-500/30'
                           : 'bg-gradient-to-tr from-gray-300 to-gray-400 dark:from-gray-700 dark:to-gray-600 group-hover:from-pink-400 group-hover:to-purple-500'
-                      }`}
+                        }`}
                     >
                       <img
                         src={c.avatar}
@@ -360,9 +344,8 @@ export const FanPortal: React.FC<FanPortalProps> = ({
                   {/* Name & Quick Chat Trigger */}
                   <div className="mt-1.5 text-center flex flex-col items-center">
                     <span
-                      className={`text-[11px] font-bold truncate max-w-[80px] ${
-                        isSelected ? 'text-pink-600 dark:text-pink-400 font-extrabold' : 'text-gray-800 dark:text-gray-200'
-                      }`}
+                      className={`text-[11px] font-bold truncate max-w-[80px] ${isSelected ? 'text-pink-600 dark:text-pink-400 font-extrabold' : 'text-gray-800 dark:text-gray-200'
+                        }`}
                     >
                       {c.name.split(' ')[0]}
                     </span>
@@ -397,11 +380,10 @@ export const FanPortal: React.FC<FanPortalProps> = ({
         <div className="flex items-center space-x-1 sm:space-x-2 overflow-x-auto no-scrollbar">
           <button
             onClick={handleOpenAllCreators}
-            className={`py-3 px-3.5 border-b-2 transition-all cursor-pointer flex items-center space-x-2 flex-shrink-0 ${
-              activeTab === 'creators'
+            className={`py-3 px-3.5 border-b-2 transition-all cursor-pointer flex items-center space-x-2 flex-shrink-0 ${activeTab === 'creators'
                 ? 'border-pink-600 text-pink-600 dark:text-pink-400 bg-pink-50/50 dark:bg-pink-500/5'
                 : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-            }`}
+              }`}
           >
             <Users className="w-4 h-4 text-pink-500" />
             <span>⭐ Nos Créatrices ({creators.length})</span>
@@ -412,23 +394,21 @@ export const FanPortal: React.FC<FanPortalProps> = ({
               setActiveTab('feed');
               sounds.playReceive();
             }}
-            className={`py-3 px-3.5 border-b-2 transition-all cursor-pointer flex items-center space-x-2 flex-shrink-0 ${
-              activeTab === 'feed'
+            className={`py-3 px-3.5 border-b-2 transition-all cursor-pointer flex items-center space-x-2 flex-shrink-0 ${activeTab === 'feed'
                 ? 'border-blue-600 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-500/5'
                 : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-            }`}
+              }`}
           >
             <ImageIcon className="w-4 h-4 text-blue-500" />
-            <span>📸 Profil & Publications ({displayedPosts.length})</span>
+            <span>📸 Profil & Publications ({activeCreator.name.split(' ')[0]}) ({displayedPosts.length})</span>
           </button>
 
           <button
-            onClick={() => handleStartChatWithCreator(creator.id)}
-            className={`py-3 px-3.5 border-b-2 transition-all cursor-pointer flex items-center space-x-2 flex-shrink-0 ${
-              activeTab === 'chat'
+            onClick={() => handleStartChatWithCreator(activeCreator.id)}
+            className={`py-3 px-3.5 border-b-2 transition-all cursor-pointer flex items-center space-x-2 flex-shrink-0 ${activeTab === 'chat'
                 ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-500/5'
                 : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-            }`}
+              }`}
           >
             <MessageCircle className="w-4 h-4 text-emerald-500" />
             <span>💬 Discussion en Direct</span>
@@ -440,11 +420,10 @@ export const FanPortal: React.FC<FanPortalProps> = ({
               setActiveTab('subscribe');
               sounds.playReceive();
             }}
-            className={`py-3 px-3.5 border-b-2 transition-all cursor-pointer flex items-center space-x-2 flex-shrink-0 ${
-              activeTab === 'subscribe'
+            className={`py-3 px-3.5 border-b-2 transition-all cursor-pointer flex items-center space-x-2 flex-shrink-0 ${activeTab === 'subscribe'
                 ? 'border-amber-500 text-amber-500 bg-amber-50/50 dark:bg-amber-500/5'
                 : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-            }`}
+              }`}
           >
             <Crown className="w-4 h-4 text-amber-500" />
             <span>👑 Formules VIP</span>
@@ -452,10 +431,14 @@ export const FanPortal: React.FC<FanPortalProps> = ({
         </div>
 
         {/* Current Active Creator Indicator */}
-        <div className="hidden md:flex items-center space-x-2 text-[11px] text-gray-400 pl-4">
+        <div 
+          onClick={() => handleOpenCreatorProfile(activeCreator.id)}
+          className="hidden md:flex items-center space-x-2 text-[11px] text-gray-400 pl-4 cursor-pointer hover:opacity-80 transition-opacity"
+          title={`Voir le profil de ${activeCreator.name}`}
+        >
           <span>Modèle sélectionnée :</span>
-          <span className="font-bold text-gray-800 dark:text-gray-200">{creator.name}</span>
-          <img src={creator.avatar} alt={creator.name} className="w-5 h-5 rounded-full object-cover border" />
+          <span className="font-bold text-gray-800 dark:text-gray-200">{activeCreator.name}</span>
+          <img src={activeCreator.avatar} alt={activeCreator.name} className="w-5 h-5 rounded-full object-cover border" />
         </div>
       </nav>
 
@@ -482,15 +465,15 @@ export const FanPortal: React.FC<FanPortalProps> = ({
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 pb-12">
               {creators.map((c) => {
-                const isSelected = c.id === currentCreatorId;
+                const isSelected = c.id === activeCreator.id;
                 return (
                   <div
                     key={c.id}
-                    className={`rounded-3xl bg-white dark:bg-[#131624] border-2 transition-all duration-300 overflow-hidden shadow-xs flex flex-col justify-between group ${
-                      isSelected
+                    onClick={() => handleOpenCreatorProfile(c.id)}
+                    className={`rounded-3xl bg-white dark:bg-[#131624] border-2 transition-all duration-300 overflow-hidden shadow-xs flex flex-col justify-between group cursor-pointer ${isSelected
                         ? 'border-pink-500 shadow-lg shadow-pink-500/10 ring-2 ring-pink-500/20'
-                        : 'border-gray-200/90 dark:border-[#1e2338] hover:border-pink-400/60 hover:shadow-md'
-                    }`}
+                        : 'border-gray-200/90 dark:border-[#1e2338] hover:border-pink-500 hover:shadow-xl hover:shadow-pink-500/10 hover:-translate-y-0.5'
+                      }`}
                   >
                     <div>
                       {/* Mini Cover */}
@@ -506,6 +489,14 @@ export const FanPortal: React.FC<FanPortalProps> = ({
                         <span className="absolute top-2.5 right-2.5 px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-[10px] font-bold text-white shadow-xs">
                           {c.category || 'VIP'}
                         </span>
+
+                        {/* Overlay hover prompt */}
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30 backdrop-blur-2xs">
+                          <span className="px-3 py-1 rounded-full bg-white/90 text-gray-900 text-[11px] font-bold shadow-md flex items-center space-x-1">
+                            <ImageIcon className="w-3 h-3 text-pink-500" />
+                            <span>Voir le profil & publications</span>
+                          </span>
+                        </div>
                       </div>
 
                       {/* Avatar & Identité */}
@@ -532,7 +523,7 @@ export const FanPortal: React.FC<FanPortalProps> = ({
                         </div>
 
                         <div className="flex items-center space-x-1.5 mt-1">
-                          <h3 className="font-black text-base text-gray-900 dark:text-white">
+                          <h3 className="font-black text-base text-gray-900 dark:text-white group-hover:text-pink-500 transition-colors">
                             {c.name}
                           </h3>
                           <CheckCircle2 className="w-4 h-4 text-blue-500" />
@@ -551,7 +542,10 @@ export const FanPortal: React.FC<FanPortalProps> = ({
                     {/* Card Actions */}
                     <div className="p-5 pt-0 flex items-center space-x-2">
                       <button
-                        onClick={() => handleStartChatWithCreator(c.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStartChatWithCreator(c.id);
+                        }}
                         className="flex-1 py-2.5 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white font-bold text-xs shadow-md shadow-pink-500/20 active:scale-95 transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
                       >
                         <MessageCircle className="w-3.5 h-3.5" />
@@ -559,15 +553,11 @@ export const FanPortal: React.FC<FanPortalProps> = ({
                       </button>
 
                       <button
-                        onClick={() => {
-                          if (onSelectCreator) onSelectCreator(c.id);
-                          setActiveTab('feed');
-                          sounds.playReceive();
-                          setTimeout(() => {
-                            mainScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-                          }, 50);
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenCreatorProfile(c.id);
                         }}
-                        className="px-3.5 py-2.5 rounded-2xl bg-gray-100 dark:bg-[#1f253d] hover:bg-gray-200 dark:hover:bg-[#272f4d] text-gray-800 dark:text-gray-200 font-bold text-xs transition-colors cursor-pointer flex items-center space-x-1"
+                        className="py-2.5 px-3 rounded-2xl bg-gray-100 hover:bg-pink-500 hover:text-white dark:bg-[#1f253d] dark:hover:bg-pink-600 text-gray-700 dark:text-gray-200 font-bold text-xs transition-colors flex items-center space-x-1 cursor-pointer"
                         title="Voir son profil et ses publications"
                       >
                         <ImageIcon className="w-3.5 h-3.5" />
@@ -589,11 +579,22 @@ export const FanPortal: React.FC<FanPortalProps> = ({
               {/* Cover Banner */}
               <div className="h-44 sm:h-56 w-full relative overflow-hidden bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-700">
                 <img
-                  src={creator.coverUrl || 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?auto=format&fit=crop&w=1400&q=80'}
-                  alt={`${creator.name} Cover`}
-                  className="w-full h-full object-cover opacity-75 hover:scale-101 transition-transform duration-700"
+                  src={activeCreator.coverUrl || 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?auto=format&fit=crop&w=1400&q=80'}
+                  alt={`${activeCreator.name} Cover`}
+                  className="w-full h-full object-cover opacity-80 hover:scale-101 transition-transform duration-700"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+
+                {/* Back to all creators button */}
+                <div className="absolute top-3 left-4 z-10">
+                  <button
+                    onClick={handleOpenAllCreators}
+                    className="px-3 py-1.5 rounded-xl bg-black/60 hover:bg-black/85 backdrop-blur-md text-white text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shadow-md"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    <span>Toutes les créatrices</span>
+                  </button>
+                </div>
               </div>
 
               {/* Profile Info Row */}
@@ -603,8 +604,8 @@ export const FanPortal: React.FC<FanPortalProps> = ({
                   <div className="flex items-end space-x-4">
                     <div className="relative p-1 rounded-full bg-gradient-to-tr from-pink-500 via-purple-500 to-amber-400 shadow-2xl">
                       <img
-                        src={creator.avatar}
-                        alt={creator.name}
+                        src={activeCreator.avatar}
+                        alt={activeCreator.name}
                         className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-white dark:border-[#131624]"
                       />
                       <span className="absolute bottom-2 right-2 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white dark:border-[#131624] animate-pulse"></span>
@@ -613,14 +614,14 @@ export const FanPortal: React.FC<FanPortalProps> = ({
                     <div className="pb-1">
                       <div className="flex items-center space-x-1.5">
                         <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
-                          {creator.name}
+                          {activeCreator.name}
                         </h1>
                         <div className="w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs shadow-sm">
                           ✓
                         </div>
                       </div>
                       <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                        {creator.handle} • <span className="text-pink-500 font-bold">{creator.category || 'Top 0.05%'}</span>
+                        {activeCreator.handle} • <span className="text-pink-500 font-bold">{activeCreator.category || 'VIP'}</span>
                       </span>
                     </div>
                   </div>
@@ -628,7 +629,7 @@ export const FanPortal: React.FC<FanPortalProps> = ({
                   {/* Primary Action Buttons */}
                   <div className="flex items-center space-x-2.5">
                     <button
-                      onClick={() => handleStartChatWithCreator(creator.id)}
+                      onClick={() => handleStartChatWithCreator(activeCreator.id)}
                       className="flex-1 sm:flex-initial flex items-center justify-center space-x-1.5 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 active:scale-95 cursor-pointer"
                     >
                       <MessageCircle className="w-4 h-4" />
@@ -657,7 +658,7 @@ export const FanPortal: React.FC<FanPortalProps> = ({
 
                 {/* Bio & Stats */}
                 <p className="text-xs text-gray-700 dark:text-gray-300 max-w-2xl leading-relaxed">
-                  {creator.bio || 'Bienvenue dans mon univers intime et exclusif 🇫🇷 Je réponds personnellement à tous mes messages privés chaque jour. Débloquez mes photos & vidéos exclusives en 4K, mes mémos vocaux et mes coulisses de tournages ! ✨'}
+                  {activeCreator.bio || 'Bienvenue dans mon univers intime et exclusif 🇫🇷 Je réponds personnellement à tous mes messages privés chaque jour. Débloquez mes photos & vidéos exclusives en 4K, mes mémos vocaux et mes coulisses de tournages ! ✨'}
                 </p>
 
                 {/* Creator Numbers Strip */}
@@ -670,19 +671,19 @@ export const FanPortal: React.FC<FanPortalProps> = ({
                   </div>
                   <div>
                     <span className="font-black text-gray-900 dark:text-white font-mono-numbers">
-                      {creator.subscribersCount || '28.4k'}
+                      {activeCreator.subscribersCount || '28.4k'}
                     </span>
                     <span className="text-gray-500 dark:text-gray-400 ml-1">Abonnés</span>
                   </div>
                   <div>
                     <span className="font-black text-gray-900 dark:text-white font-mono-numbers">
-                      {creator.responseSpeed || '~2 min'}
+                      {activeCreator.responseSpeed || '~2 min'}
                     </span>
                     <span className="text-gray-500 dark:text-gray-400 ml-1">Réponse moy.</span>
                   </div>
                   <div>
                     <span className="font-black text-amber-500 font-mono-numbers">
-                      ★ {creator.rating || 4.9}
+                      ★ {activeCreator.rating || 4.9}
                     </span>
                     <span className="text-gray-500 dark:text-gray-400 ml-1">Avis VIP</span>
                   </div>
@@ -701,13 +702,13 @@ export const FanPortal: React.FC<FanPortalProps> = ({
                   <div className="p-4 flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <img
-                        src={creator.avatar}
-                        alt={creator.name}
+                        src={activeCreator.avatar}
+                        alt={activeCreator.name}
                         className="w-10 h-10 rounded-full object-cover border"
                       />
                       <div>
                         <div className="flex items-center space-x-1.5">
-                          <span className="font-bold text-xs text-gray-900 dark:text-white">{creator.name}</span>
+                          <span className="font-bold text-xs text-gray-900 dark:text-white">{activeCreator.name}</span>
                           <span className="text-[10px] text-blue-500">✓</span>
                         </div>
                         <span className="text-[10px] text-gray-400">{post.createdAt}</span>
@@ -769,9 +770,8 @@ export const FanPortal: React.FC<FanPortalProps> = ({
                     <div className="flex items-center space-x-4">
                       <button
                         onClick={() => handleLikePost(post.id)}
-                        className={`flex items-center space-x-1.5 cursor-pointer transition-colors ${
-                          post.isLiked ? 'text-pink-600 font-bold' : 'hover:text-pink-500'
-                        }`}
+                        className={`flex items-center space-x-1.5 cursor-pointer transition-colors ${post.isLiked ? 'text-pink-600 font-bold' : 'hover:text-pink-500'
+                          }`}
                       >
                         <Heart className={`w-4 h-4 ${post.isLiked ? 'fill-pink-600 text-pink-600' : ''}`} />
                         <span className="font-mono-numbers">{post.likesCount}</span>
@@ -788,7 +788,7 @@ export const FanPortal: React.FC<FanPortalProps> = ({
 
                     <div className="flex items-center space-x-2">
                       <button
-                        onClick={() => handleStartChatWithCreator(creator.id)}
+                        onClick={() => handleStartChatWithCreator(activeCreator.id)}
                         className="flex items-center space-x-1 text-blue-500 hover:text-blue-600 font-bold cursor-pointer"
                       >
                         <MessageCircle className="w-3.5 h-3.5" />
@@ -813,10 +813,13 @@ export const FanPortal: React.FC<FanPortalProps> = ({
         {activeTab === 'chat' && (
           <div className="h-full flex overflow-hidden">
             <FanChatView
-              creator={creator}
+              creator={activeCreator}
               creators={creators}
-              activeCreatorId={currentCreatorId}
-              onSelectCreator={onSelectCreator}
+              activeCreatorId={activeCreator.id}
+              onSelectCreator={(cId) => {
+                setSelectedCreatorId(cId);
+                onSelectCreator?.(cId);
+              }}
               fanUser={fanUser}
               messages={messages}
               onSendMessage={onSendMessageFromFan}
@@ -833,7 +836,7 @@ export const FanPortal: React.FC<FanPortalProps> = ({
           <div className="p-6 max-w-4xl mx-auto w-full pb-16">
             <div className="text-center mb-8">
               <h2 className="text-2xl font-black text-gray-900 dark:text-white">
-                Choisissez votre formule VIP pour {creator.name}
+                Choisissez votre formule VIP pour {activeCreator.name}
               </h2>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-md mx-auto">
                 Rejoignez les abonnés privilégiés et discutez chaque jour en tête-à-tête avec elle.
@@ -905,7 +908,7 @@ export const FanPortal: React.FC<FanPortalProps> = ({
         isOpen={isSubOpen}
         onClose={() => setIsSubOpen(false)}
         fanUser={fanUser}
-        creator={creator}
+        creator={activeCreator}
         onSubscribeSuccess={(tier, price) => {
           onSubscribe(tier, price);
           setActiveTab('chat');
