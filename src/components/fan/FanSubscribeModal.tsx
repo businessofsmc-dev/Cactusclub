@@ -146,13 +146,12 @@ export const FanSubscribeModal: React.FC<FanSubscribeModalProps> = ({
               <div
                 key={p.id}
                 onClick={() => setSelectedPlan(p.id)}
-                className={`p-4 rounded-2xl border-2 transition-all cursor-pointer relative ${
-                  isSelected
+                className={`p-4 rounded-2xl border-2 transition-all cursor-pointer relative ${isSelected
                     ? p.isFree
                       ? 'border-emerald-500 bg-emerald-50/60 dark:bg-emerald-500/10 shadow-md shadow-emerald-500/10'
                       : 'border-pink-500 bg-pink-50/50 dark:bg-pink-500/10 shadow-md shadow-pink-500/10'
                     : 'border-gray-200 dark:border-[#242b40] hover:border-gray-300 dark:hover:border-gray-600 bg-gray-50/40 dark:bg-transparent'
-                }`}
+                  }`}
               >
                 {p.badge && (
                   <span className={`absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full text-[9px] font-black text-white shadow-xs uppercase tracking-wider ${p.badgeColor}`}>
@@ -163,13 +162,12 @@ export const FanSubscribeModal: React.FC<FanSubscribeModalProps> = ({
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center space-x-2.5">
                     <div
-                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                        isSelected
+                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${isSelected
                           ? p.isFree
                             ? 'border-emerald-500 bg-emerald-500 text-white'
                             : 'border-pink-500 bg-pink-500 text-white'
                           : 'border-gray-400 dark:border-gray-600'
-                      }`}
+                        }`}
                     >
                       {isSelected ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <PlanIcon className="w-3 h-3 text-gray-400" />}
                     </div>
@@ -248,13 +246,12 @@ export const FanSubscribeModal: React.FC<FanSubscribeModalProps> = ({
 
           <button
             onClick={handleConfirm}
-            className={`w-full py-3.5 rounded-2xl font-bold text-sm shadow-xl active:scale-98 transition-all flex items-center justify-center space-x-2 cursor-pointer ${
-              currentPlan.isFree
+            className={`w-full py-3.5 rounded-2xl font-bold text-sm shadow-xl active:scale-98 transition-all flex items-center justify-center space-x-2 cursor-pointer ${currentPlan.isFree
                 ? 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white shadow-emerald-500/25'
                 : isAffordable
-                ? 'bg-gradient-to-r from-pink-500 via-purple-600 to-indigo-600 hover:from-pink-600 hover:to-indigo-500 text-white shadow-pink-500/25'
-                : 'bg-amber-500 hover:bg-amber-600 text-black shadow-amber-500/25'
-            }`}
+                  ? 'bg-gradient-to-r from-pink-500 via-purple-600 to-indigo-600 hover:from-pink-600 hover:to-indigo-500 text-white shadow-pink-500/25'
+                  : 'bg-amber-500 hover:bg-amber-600 text-black shadow-amber-500/25'
+              }`}
           >
             {currentPlan.isFree ? (
               <>

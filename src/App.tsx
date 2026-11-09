@@ -16,13 +16,13 @@ import { MediaLightbox } from './components/MediaLightbox';
 import { ToastContainer } from './components/Toast';
 import { sounds } from './utils/sound';
 import { LanguageProvider } from './i18n/LanguageContext';
-import { 
-  CREATOR_ACCOUNTS, 
-  INITIAL_FANS, 
-  INITIAL_MESSAGES_VALENTIN, 
+import {
+  CREATOR_ACCOUNTS,
+  INITIAL_FANS,
+  INITIAL_MESSAGES_VALENTIN,
   CHATTER_TEAM,
   INITIAL_FAN_USER,
-  INITIAL_CREATOR_MESSAGES 
+  INITIAL_CREATOR_MESSAGES
 } from './data/mockData';
 import type { Fan, ChatMessage, CannedScript, ToastMessage, CreatorAccount, FanUser } from './types/crm';
 import { FanPortal } from './components/fan/FanPortal';
@@ -239,10 +239,10 @@ function DashboardApp() {
       prev.map((f) =>
         f.id === selectedFanId
           ? {
-              ...f,
-              lastMessageSnippet: isVoiceNote ? '🎙️ Voice note memo' : text,
-              lastMessageTime: timeStr,
-            }
+            ...f,
+            lastMessageSnippet: isVoiceNote ? '🎙️ Voice note memo' : text,
+            lastMessageTime: timeStr,
+          }
           : f
       )
     );
@@ -284,10 +284,10 @@ function DashboardApp() {
           prev.map((f) =>
             f.id === 'valentin'
               ? {
-                  ...f,
-                  lastMessageSnippet: randomReply,
-                  lastMessageTime: replyTime,
-                }
+                ...f,
+                lastMessageSnippet: randomReply,
+                lastMessageTime: replyTime,
+              }
               : f
           )
         );
@@ -307,10 +307,10 @@ function DashboardApp() {
         [selectedFanId]: fanMsgs.map((m) =>
           m.id === msgId && m.media
             ? {
-                ...m,
-                isUnlockedPPV: true,
-                media: { ...m.media, isLocked: false },
-              }
+              ...m,
+              isUnlockedPPV: true,
+              media: { ...m.media, isLocked: false },
+            }
             : m
         ),
       };
@@ -445,10 +445,10 @@ function DashboardApp() {
       text,
       price
         ? {
-            type: 'video',
-            url: 'https://images.unsplash.com/photo-1584824486509-112e4181ff6b?auto=format&fit=crop&w=400&q=80',
-            price,
-          }
+          type: 'video',
+          url: 'https://images.unsplash.com/photo-1584824486509-112e4181ff6b?auto=format&fit=crop&w=400&q=80',
+          price,
+        }
         : undefined
     );
   };
@@ -459,12 +459,12 @@ function DashboardApp() {
       prev.map((f) =>
         f.id === selectedFanId && !f.profile.preferences.includes(tag)
           ? {
-              ...f,
-              profile: {
-                ...f.profile,
-                preferences: [...f.profile.preferences, tag],
-              },
-            }
+            ...f,
+            profile: {
+              ...f.profile,
+              preferences: [...f.profile.preferences, tag],
+            },
+          }
           : f
       )
     );
@@ -481,12 +481,12 @@ function DashboardApp() {
       prev.map((f) =>
         f.id === selectedFanId
           ? {
-              ...f,
-              profile: {
-                ...f.profile,
-                preferences: f.profile.preferences.filter((t) => t !== tagToRemove),
-              },
-            }
+            ...f,
+            profile: {
+              ...f.profile,
+              preferences: f.profile.preferences.filter((t) => t !== tagToRemove),
+            },
+          }
           : f
       )
     );
@@ -498,12 +498,12 @@ function DashboardApp() {
       prev.map((f) =>
         f.id === selectedFanId
           ? {
-              ...f,
-              profile: {
-                ...f.profile,
-                notes: [noteText, ...f.profile.notes],
-              },
-            }
+            ...f,
+            profile: {
+              ...f.profile,
+              notes: [noteText, ...f.profile.notes],
+            },
+          }
           : f
       )
     );
@@ -607,11 +607,11 @@ function DashboardApp() {
         prev.map((f) =>
           f.id === 'valentin'
             ? {
-                ...f,
-                lastMessageSnippet: text,
-                lastMessageTime: timeStr,
-                unreadCount: (f.unreadCount || 0) + 1,
-              }
+              ...f,
+              lastMessageSnippet: text,
+              lastMessageTime: timeStr,
+              unreadCount: (f.unreadCount || 0) + 1,
+            }
             : f
         )
       );
@@ -684,10 +684,10 @@ function DashboardApp() {
           prev.map((f) =>
             f.id === 'valentin'
               ? {
-                  ...f,
-                  lastMessageSnippet: reply,
-                  lastMessageTime: replyTime,
-                }
+                ...f,
+                lastMessageSnippet: reply,
+                lastMessageTime: replyTime,
+              }
               : f
           )
         );
@@ -722,10 +722,10 @@ function DashboardApp() {
         [creatorId]: msgs.map((m) =>
           m.id === messageId
             ? {
-                ...m,
-                isUnlockedPPV: true,
-                media: m.media ? { ...m.media, isLocked: false } : undefined,
-              }
+              ...m,
+              isUnlockedPPV: true,
+              media: m.media ? { ...m.media, isLocked: false } : undefined,
+            }
             : m
         ),
       };
@@ -740,10 +740,10 @@ function DashboardApp() {
           valentin: fanMsgs.map((m) =>
             m.id === messageId
               ? {
-                  ...m,
-                  isUnlockedPPV: true,
-                  media: m.media ? { ...m.media, isLocked: false } : undefined,
-                }
+                ...m,
+                isUnlockedPPV: true,
+                media: m.media ? { ...m.media, isLocked: false } : undefined,
+              }
               : m
           ),
         };

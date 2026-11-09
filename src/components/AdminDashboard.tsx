@@ -81,7 +81,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [hoveredPoint, setHoveredPoint] = useState<{ day: string; val: number; x: number; y: number } | null>(null);
 
-  const [platform, setPlatform] = useState<'OnlyFans' | 'Fanvue' | 'Fansly'>('OnlyFans');
+  const [platform, setPlatform] = useState<'Cactusclub' | 'Fanvue' | 'Fansly'>('Cactusclub');
   const [platformDropdownOpen, setPlatformDropdownOpen] = useState(false);
   const [ofManagerOpen, setOfManagerOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
@@ -172,27 +172,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <Menu className="w-4 h-4" />
           </button>
 
-          {/* OnlyFans Dropdown Pill */}
+          {/* Cactusclub Platform Selector Pill */}
           <button
             onClick={() => setPlatformDropdownOpen(!platformDropdownOpen)}
-            className="flex-1 flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-blue-50/70 dark:bg-blue-500/10 border border-blue-200/60 dark:border-blue-500/20 text-blue-600 dark:text-blue-400 font-bold text-xs cursor-pointer hover:bg-blue-100/50 transition-colors"
+            className="flex-1 flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-blue-500/10 border border-pink-500/20 text-gray-900 dark:text-white font-bold text-xs cursor-pointer hover:bg-pink-500/15 transition-colors"
           >
             <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center text-white text-[9px] font-black">
-                {platform === 'OnlyFans' ? 'OF' : platform.substring(0, 2).toUpperCase()}
+              <div className="w-5 h-5 rounded-lg bg-gradient-to-tr from-pink-500 to-purple-600 flex items-center justify-center text-white text-[9px] font-black shadow-xs">
+                {platform === 'Cactusclub' ? 'CC' : platform.substring(0, 2).toUpperCase()}
               </div>
-              <span className="truncate">{platform}</span>
+              <span className="truncate font-black tracking-tight">{platform}</span>
             </div>
             <div className="flex items-center space-x-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-              <ChevronDown className={`w-3.5 h-3.5 text-blue-500 transition-transform ${platformDropdownOpen ? 'rotate-180' : ''}`} />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${platformDropdownOpen ? 'rotate-180' : ''}`} />
             </div>
           </button>
 
           {/* Platform Switcher Dropdown */}
           {platformDropdownOpen && (
             <div className="absolute left-3 right-3 top-14 bg-white dark:bg-[#1a2033] border border-gray-200 dark:border-[#2a324d] rounded-xl shadow-2xl py-1 z-50 animate-in fade-in zoom-in-95">
-              {(['OnlyFans', 'Fanvue', 'Fansly'] as const).map((p) => (
+              {(['Cactusclub', 'Fanvue', 'Fansly'] as const).map((p) => (
                 <button
                   key={p}
                   onClick={() => {
@@ -201,17 +201,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   }}
                   className={`w-full flex items-center justify-between px-3 py-2 text-xs text-left cursor-pointer transition-colors ${
                     platform === p
-                      ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300 font-bold'
+                      ? 'bg-pink-50 dark:bg-pink-500/20 text-pink-600 dark:text-pink-300 font-bold'
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5'
                   }`}
                 >
                   <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 rounded-full bg-blue-500/20 text-blue-600 flex items-center justify-center text-[9px] font-black">
-                      {p.substring(0, 2).toUpperCase()}
+                    <div className="w-5 h-5 rounded-lg bg-gradient-to-tr from-pink-500 to-purple-600 text-white flex items-center justify-center text-[9px] font-black shadow-xs">
+                      {p === 'Cactusclub' ? 'CC' : p.substring(0, 2).toUpperCase()}
                     </div>
-                    <span>{p}</span>
+                    <span className="font-bold">{p}</span>
                   </div>
-                  {platform === p && <Check className="w-3.5 h-3.5 text-blue-500" />}
+                  {platform === p && <Check className="w-3.5 h-3.5 text-pink-500" />}
                 </button>
               ))}
             </div>
@@ -642,11 +642,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 className="lg:col-span-2 flex flex-col justify-center pr-4 border-r border-gray-100 dark:border-[#1c2238] group cursor-pointer"
               >
                 <div className="flex items-center space-x-2.5 mb-2">
-                  <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-md shadow-blue-500/30 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
-                    <span className="font-black text-xs">OF</span>
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-pink-500 to-purple-600 text-white flex items-center justify-center shadow-md shadow-pink-500/30 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                    <span className="font-black text-xs tracking-tight">CC</span>
                   </div>
                   <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
-                    {t.totalEarnings}
+                    {t.totalEarnings} Cactusclub
                   </span>
                 </div>
                 <div className="flex items-baseline space-x-2">

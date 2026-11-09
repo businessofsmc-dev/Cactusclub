@@ -39,8 +39,8 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
       email: email.trim(),
       avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
       walletBalance: 150.00, // Preloaded with $150 so user can purchase PPV & tips immediately!
-      isSubscribed: true,
-      subscriptionTier: 'monthly',
+      isSubscribed: false, // Starts unsubscribed so visitor chooses Free vs VIP plan
+      subscriptionTier: undefined,
       unlockedMediaIds: [],
     };
 
@@ -56,8 +56,8 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
       email: 'valentin@fan.cactusclub',
       avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
       walletBalance: 150.00,
-      isSubscribed: true,
-      subscriptionTier: 'monthly',
+      isSubscribed: false,
+      subscriptionTier: undefined,
       unlockedMediaIds: [],
     };
 

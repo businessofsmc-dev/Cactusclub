@@ -447,8 +447,8 @@ export const INITIAL_FAN_USER: FanUser = {
   email: 'valentin@cactusclub.agency',
   avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
   walletBalance: 125.00,
-  isSubscribed: true,
-  subscriptionTier: 'monthly',
+  isSubscribed: false,
+  subscriptionTier: undefined,
   unlockedMediaIds: [],
 };
 
