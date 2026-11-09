@@ -899,6 +899,7 @@ function DashboardApp() {
         <AdminDashboard
           onNavigateToMessages={() => navigateTo('messages')}
           onNavigateToFan={() => navigateTo('fan')}
+          onNavigateToLogin={() => navigateTo('login')}
           sfwMode={sfwMode}
           onToggleSfw={() => setSfwMode(!sfwMode)}
           darkMode={darkMode}
@@ -925,6 +926,7 @@ function DashboardApp() {
             onSelectChatter={setActiveChatter}
             onBackToDashboard={() => navigateTo('dashboard')}
             onNavigateToFan={() => navigateTo('fan')}
+            onNavigateToLogin={() => navigateTo('login')}
             onOpenAddAccount={() => setIsAddAccountOpen(true)}
             onSimulateFanMessage={() => {
               const incoming = [

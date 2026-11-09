@@ -104,18 +104,21 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
 
         {/* Brand Content */}
         <div className="relative z-10 max-w-lg">
-          {/* Official OnlyFans Logo */}
-          <div className="flex items-center space-x-2.5 mb-8">
-            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-md">
-              <svg className="w-6 h-6 text-[#00aff0]" viewBox="0 0 24 24" fill="currentColor">
-                <circle cx="12" cy="12" r="10" fill="currentColor" />
-                <circle cx="12" cy="12" r="4.5" fill="#00aff0" />
-                <circle cx="12" cy="12" r="2" fill="white" />
-              </svg>
+          {/* Official Cactusclub Brand Logo */}
+          <div className="flex items-center space-x-3 mb-8">
+            <div className="w-11 h-11 rounded-2xl bg-white flex items-center justify-center shadow-lg shadow-black/10">
+              <span className="font-black text-xl text-[#00aff0] tracking-tighter">
+                CC
+              </span>
             </div>
-            <span className="text-3xl font-black tracking-tight text-white">
-              OnlyFans
-            </span>
+            <div className="flex flex-col">
+              <span className="text-3xl font-black tracking-tight text-white leading-none">
+                Cactusclub
+              </span>
+              <span className="text-[10px] uppercase font-bold tracking-widest text-white/75 mt-1">
+                VIP Creator Network
+              </span>
+            </div>
           </div>
 
           {/* Catchphrase in exact French wording */}
@@ -147,14 +150,10 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
       <div className="flex-1 flex flex-col justify-center items-center px-6 sm:px-12 relative bg-white overflow-y-auto">
         {/* Mobile Header Branding (Visible on small screens only) */}
         <div className="lg:hidden flex items-center space-x-2 mb-8">
-          <div className="w-8 h-8 rounded-full bg-[#00aff0] flex items-center justify-center text-white">
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-              <circle cx="12" cy="12" r="10" fill="currentColor" />
-              <circle cx="12" cy="12" r="4.5" fill="white" />
-              <circle cx="12" cy="12" r="2" fill="#00aff0" />
-            </svg>
+          <div className="w-9 h-9 rounded-xl bg-[#00aff0] flex items-center justify-center text-white font-black text-base shadow-md">
+            CC
           </div>
-          <span className="text-2xl font-black text-[#00aff0]">OnlyFans</span>
+          <span className="text-2xl font-black text-[#00aff0]">Cactusclub</span>
         </div>
 
         {/* Central Container: exactly 380px - 420px as on desktop OnlyFans */}
@@ -216,19 +215,18 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
             <button
               type="submit"
               disabled={!isButtonActive}
-              className={`w-full py-3 rounded-full text-xs font-extrabold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
-                isButtonActive
+              className={`w-full py-3 rounded-full text-xs font-extrabold uppercase tracking-wider transition-all duration-200 cursor-pointer ${isButtonActive
                   ? 'bg-[#00aff0] hover:bg-[#009fe3] text-white shadow-md shadow-[#00aff0]/30 active:scale-98'
                   : 'bg-[#dce1e7] text-white cursor-not-allowed'
-              }`}
+                }`}
             >
               {step === 'email' && mode === 'login' ? 'SUIVANT' : 'SE CONNECTER'}
             </button>
           </form>
 
-          {/* Legal Compliance Notice (Exact OnlyFans text) */}
+          {/* Legal Compliance Notice */}
           <p className="text-[11px] leading-relaxed text-gray-500 mt-4 text-left">
-            En vous connectant et en utilisant OnlyFans, vous acceptez nos{' '}
+            En vous connectant et en utilisant Cactusclub, vous acceptez nos{' '}
             <span className="text-[#00aff0] hover:underline cursor-pointer">Conditions d'utilisation</span> et notre{' '}
             <span className="text-[#00aff0] hover:underline cursor-pointer">Politique de confidentialité</span>, et vous confirmez que vous avez au moins 18 ans.
           </p>
@@ -243,7 +241,7 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
               }}
               className="text-[#00aff0] hover:underline text-sm font-semibold cursor-pointer"
             >
-              {mode === 'login' ? 'Inscrivez-vous à OnlyFans' : 'Vous avez déjà un compte ? Connectez-vous'}
+              {mode === 'login' ? 'Inscrivez-vous à Cactusclub' : 'Vous avez déjà un compte ? Connectez-vous'}
             </button>
           </div>
 
@@ -311,7 +309,7 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
         {/* Floating Support Question Mark Button in bottom right */}
         <button
           type="button"
-          onClick={() => alert("Besoin d'aide ? Le support CactusClub & OnlyFans est disponible 24/7.")}
+          onClick={() => alert("Besoin d'aide ? Le support Cactusclub est disponible 24/7.")}
           className="fixed bottom-6 right-6 w-11 h-11 rounded-lg bg-[#00aff0] hover:bg-[#009fe3] text-white flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95 cursor-pointer z-30"
           title="Support et aide"
         >

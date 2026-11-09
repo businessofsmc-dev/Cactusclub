@@ -34,6 +34,7 @@ interface TopNavProps {
   onSelectChatter: (name: string) => void;
   onBackToDashboard?: () => void;
   onNavigateToFan?: () => void;
+  onNavigateToLogin?: () => void;
   onOpenAddAccount?: () => void;
   onSimulateFanMessage?: () => void;
   onSimulateTip?: (amount: number) => void;
@@ -59,6 +60,7 @@ export const TopNav: React.FC<TopNavProps> = ({
   onSelectChatter,
   onBackToDashboard,
   onNavigateToFan,
+  onNavigateToLogin,
   onOpenAddAccount,
   onSimulateFanMessage,
   onSimulateTip,
@@ -240,6 +242,17 @@ export const TopNav: React.FC<TopNavProps> = ({
               className="flex items-center space-x-1 px-2.5 py-1 rounded bg-pink-500/15 hover:bg-pink-500/25 text-pink-300 border border-pink-500/30 text-[11px] font-semibold transition-all cursor-pointer shadow-xs"
             >
               <span>👑 Vue Fan</span>
+            </button>
+          )}
+
+          {/* Quick Switch to Cactusclub Login Page */}
+          {onNavigateToLogin && (
+            <button
+              onClick={onNavigateToLogin}
+              title="Voir la page de connexion Cactusclub"
+              className="flex items-center space-x-1 px-2.5 py-1 rounded bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 border border-blue-500/30 text-[11px] font-semibold transition-all cursor-pointer shadow-xs"
+            >
+              <span>🔐 Login Cactusclub</span>
             </button>
           )}
 
