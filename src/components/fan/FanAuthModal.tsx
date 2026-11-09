@@ -68,8 +68,8 @@ export const FanAuthModal: React.FC<FanAuthModalProps> = ({
             <X className="w-5 h-5" />
           </button>
           
-          <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-xl shadow-blue-500/30">
-            <Sparkles className="w-7 h-7" />
+          <div className="mx-auto mb-3 bg-white p-2 rounded-2xl shadow-lg border border-gray-100 inline-block">
+            <img src="/cactusclub-logo.png" alt="CactusClub" className="h-8 w-auto object-contain" />
           </div>
 
           <h2 className="text-lg font-black text-gray-900 dark:text-white">

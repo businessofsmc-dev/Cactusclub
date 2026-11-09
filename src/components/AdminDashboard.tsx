@@ -509,32 +509,36 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div className="p-3" ref={platformRef}>
               <button
                 onClick={() => setPlatformDropdownOpen(!platformDropdownOpen)}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-[#fdf2f8] dark:bg-[#201524] border border-[#fbcfe8] dark:border-[#381e3e] text-xs font-semibold cursor-pointer hover:bg-[#fce7f3] transition-all"
+                className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-white dark:bg-[#1a2033] border border-gray-200 dark:border-[#27314d] text-xs font-semibold cursor-pointer hover:border-pink-300 dark:hover:border-pink-500/40 transition-all shadow-2xs"
               >
                 <div className="flex items-center space-x-2 min-w-0">
-                  <div
-                    className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black flex-shrink-0 text-white ${
-                      platform === 'Cactusclub'
-                        ? 'bg-gradient-to-tr from-[#ec4899] to-[#c026d3]'
-                        : platform === 'OnlyFans'
-                        ? 'bg-[#00aff0]'
-                        : platform === 'Fanvue'
-                        ? 'bg-emerald-500'
-                        : 'bg-purple-600'
-                    }`}
-                  >
-                    {platform === 'Cactusclub' ? 'cc' : platform === 'OnlyFans' ? 'of' : platform.substring(0, 2).toLowerCase()}
-                  </div>
-                  <span className="font-bold text-gray-900 dark:text-white truncate">
-                    {platform}
-                  </span>
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
+                  {platform === 'Cactusclub' ? (
+                    <img src="/cactusclub-logo.png" alt="CactusClub" className="h-5.5 w-auto object-contain" />
+                  ) : (
+                    <div className="flex items-center space-x-2">
+                      <div
+                        className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black flex-shrink-0 text-white ${
+                          platform === 'OnlyFans'
+                            ? 'bg-[#00aff0]'
+                            : platform === 'Fanvue'
+                            ? 'bg-emerald-500'
+                            : 'bg-purple-600'
+                        }`}
+                      >
+                        {platform === 'OnlyFans' ? 'of' : platform.substring(0, 2).toLowerCase()}
+                      </div>
+                      <span className="font-bold text-gray-900 dark:text-white truncate">
+                        {platform}
+                      </span>
+                    </div>
+                  )}
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0 ml-1" />
                 </div>
                 <ChevronDown className="w-3.5 h-3.5 text-gray-400 flex-shrink-0 ml-1" />
               </button>
 
               {platformDropdownOpen && (
-                <div className="absolute top-26 left-3 w-50 bg-white dark:bg-[#191f33] border border-gray-200 dark:border-[#27314d] rounded-2xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95">
+                <div className="absolute top-26 left-3 w-52 bg-white dark:bg-[#191f33] border border-gray-200 dark:border-[#27314d] rounded-2xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95">
                   {(['Cactusclub', 'OnlyFans', 'Fanvue', 'Fansly'] as const).map((p) => (
                     <button
                       key={p}
@@ -549,20 +553,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       }`}
                     >
                       <div className="flex items-center space-x-2">
-                        <div
-                          className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black text-white ${
-                            p === 'Cactusclub'
-                              ? 'bg-gradient-to-tr from-[#ec4899] to-[#c026d3]'
-                              : p === 'OnlyFans'
-                              ? 'bg-[#00aff0]'
-                              : p === 'Fanvue'
-                              ? 'bg-emerald-500'
-                              : 'bg-purple-600'
-                          }`}
-                        >
-                          {p === 'Cactusclub' ? 'cc' : p === 'OnlyFans' ? 'of' : p.substring(0, 2).toLowerCase()}
-                        </div>
-                        <span>{p}</span>
+                        {p === 'Cactusclub' ? (
+                          <img src="/cactusclub-logo.png" alt="CactusClub" className="h-4.5 w-auto object-contain" />
+                        ) : (
+                          <>
+                            <div
+                              className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black text-white ${
+                                p === 'OnlyFans'
+                                  ? 'bg-[#00aff0]'
+                                  : p === 'Fanvue'
+                                  ? 'bg-emerald-500'
+                                  : 'bg-purple-600'
+                              }`}
+                            >
+                              {p === 'OnlyFans' ? 'of' : p.substring(0, 2).toLowerCase()}
+                            </div>
+                            <span>{p}</span>
+                          </>
+                        )}
                       </div>
                       {platform === p && <Check className="w-3 h-3 text-[#ec4899]" />}
                     </button>
@@ -1398,11 +1406,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   className="md:col-span-3 flex flex-col justify-center pr-6 md:border-r border-gray-100 dark:border-[#1c2238] cursor-pointer group"
                 >
                   <div className="flex items-center space-x-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#ec4899] to-[#c026d3] text-white flex items-center justify-center text-xs font-black shadow-xs group-hover:scale-105 transition-transform">
-                      <span className="font-extrabold tracking-tight">cc</span>
+                    <div className="bg-white p-1 rounded-xl shadow-xs border border-gray-100 dark:border-gray-800">
+                      <img src="/cactusclub-logo.png" alt="CactusClub" className="h-6 w-auto object-contain" />
                     </div>
                     <span className="text-xs font-bold text-gray-600 dark:text-gray-300">
-                      Total des revenus Cactusclub
+                      Total des revenus CactusClub
                     </span>
                   </div>
                   <div className="flex items-center space-x-2 mt-2">

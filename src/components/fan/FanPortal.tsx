@@ -199,13 +199,8 @@ export const FanPortal: React.FC<FanPortalProps> = ({
       {/* Top Application Header */}
       <header className="h-14 px-4 sm:px-6 bg-white dark:bg-[#131624] border-b border-gray-200 dark:border-[#1f2438] flex items-center justify-between z-30 shadow-xs flex-shrink-0">
         {/* Brand */}
-        <div className="flex items-center space-x-2.5">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-pink-500 to-purple-600 flex items-center justify-center text-white shadow-md shadow-pink-500/20 font-black text-sm">
-            CC
-          </div>
-          <span className="font-black text-base tracking-tight text-gray-900 dark:text-white">
-            CactusClub
-          </span>
+        <div className="flex items-center bg-white dark:bg-white/10 px-2.5 py-1 rounded-xl shadow-2xs">
+          <img src="/cactusclub-logo.png" alt="CactusClub" className="h-6 w-auto object-contain" />
         </div>
 
         {/* Fan Balance & User Controls */}
