@@ -266,7 +266,7 @@ export const FanPortal: React.FC<FanPortalProps> = ({
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-pink-500"></span>
             </span>
             <h2 className="text-xs font-black uppercase tracking-wider text-gray-900 dark:text-white">
-              Créatrices VIP en Direct ({creators.length})
+              Créatrices VIP ({creators.length})
             </h2>
             <span className="hidden sm:inline-block text-[10px] px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-600 dark:text-pink-400 font-bold">
               Cliquez pour discuter en tête-à-tête
@@ -411,7 +411,7 @@ export const FanPortal: React.FC<FanPortalProps> = ({
               }`}
           >
             <MessageCircle className="w-4 h-4 text-emerald-500" />
-            <span>💬 Discussion en Direct</span>
+            <span>💬 Discussion Privée</span>
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
           </button>
 
@@ -485,14 +485,9 @@ export const FanPortal: React.FC<FanPortalProps> = ({
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/75 to-transparent"></div>
 
-                        {/* Badges on Cover */}
-                        <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none">
-                          <span className="px-2.5 py-1 rounded-full bg-emerald-500/90 text-white text-[10px] font-bold flex items-center space-x-1 shadow-sm">
-                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
-                            <span>EN DIRECT</span>
-                          </span>
-
-                          <span className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[10px] font-bold text-white shadow-xs border border-white/10">
+                        {/* Badge VIP / Catégorie */}
+                        <div className="absolute top-2.5 right-2.5 pointer-events-none">
+                          <span className="px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-[10px] font-bold text-white shadow-xs border border-white/10">
                             {c.category || 'VIP'}
                           </span>
                         </div>
