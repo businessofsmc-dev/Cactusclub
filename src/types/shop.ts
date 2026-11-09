@@ -34,3 +34,4 @@ export interface ShopOrder {
   status: 'confirmed' | 'shipping' | 'delivered';
   trackingNumber: string;
 }
+

@@ -130,3 +130,11 @@ graph TD
 * **Navigation $O(1)$** : Les messages et les profils sont indexés par identifiant (`messagesMap[selectedFanId]`), garantissant zéro latence lors du basculement d'un fan à un autre au milieu d'une centaine de conversations actives.
 * **Audio Web Natif** : Aucun fichier `.mp3` lourd à télécharger ; les sons d'envoi, de réception et d'encaissement de pourboires sont générés en direct par synthèse de fréquences via l'oscillateur Web Audio natif.
 
+---
+
+## 5. Règle Métier & Sécurité des Médias Asymétrique
+
+Pour préserver l'intégrité, la sécurité et la conformité légale de la plateforme :
+* **Interdiction Totale pour les Fans** : Les fans n'ont **AUCUN droit** d'envoyer des photos, des vidéos, des notes vocales ou des fichiers quelconques. Les fonctions d'attachement, le glisser-déposer (*drag-and-drop*) et le collage depuis le presse-papiers (*paste*) sont strictement verrouillés dans `FanChatView`. Les fans communiquent uniquement par texte, emojis et pourboires (*tips*).
+* **Privilège Exclusif Modèles & Administrateurs** : Seuls l'administrateur de l'agence et les modèles/créatrices peuvent uploader et transmettre des fichiers médias (galerie Vault, PPV payants déblocables, photos privées, vidéos 4K, notes audio) via `ChatArea`.
+

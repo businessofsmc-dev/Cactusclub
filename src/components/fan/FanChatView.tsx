@@ -73,6 +73,17 @@ export const FanChatView: React.FC<FanChatViewProps> = ({
     sounds.playSend();
   };
 
+  /**
+   * RÈGLE MÉTIER & SÉCURITÉ STRICTE :
+   * Les fans n'ont AUCUN droit d'envoyer des photos, vidéos ou fichiers.
+   * Seuls les administrateurs et les modèles ont l'autorisation d'envoyer des médias.
+   */
+  const handleBlockedFileUpload = (e: React.DragEvent | React.ClipboardEvent) => {
+    e.preventDefault();
+    sounds.playReceive();
+    alert("Sécurité CactusClub : L'envoi de photos, vidéos ou fichiers n'est pas autorisé pour les fans. Seules les créatrices et l'administration peuvent partager des médias.");
+  };
+
   const handleUnlockClick = (msgId: string, price: number) => {
     const success = onUnlockPPV(msgId, price);
     if (success) {
@@ -97,7 +108,11 @@ export const FanChatView: React.FC<FanChatViewProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#f8f9fc] dark:bg-[#0f121d] overflow-hidden select-none">
+    <div 
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={handleBlockedFileUpload}
+      className="flex-1 flex flex-col h-full bg-[#f8f9fc] dark:bg-[#0f121d] overflow-hidden select-none"
+    >
       {/* Chat Room Top Bar */}
       <div className="h-16 px-6 bg-white dark:bg-[#151926] border-b border-gray-200 dark:border-[#22273b] flex items-center justify-between z-10 shadow-xs">
         <div className="flex items-center space-x-3">
@@ -396,6 +411,11 @@ export const FanChatView: React.FC<FanChatViewProps> = ({
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
+            onPaste={(e) => {
+              if (e.clipboardData && e.clipboardData.files && e.clipboardData.files.length > 0) {
+                handleBlockedFileUpload(e);
+              }
+            }}
             onClick={() => {
               if (!hasAccessToChat && onOpenSubscribeModal) {
                 onOpenSubscribeModal();

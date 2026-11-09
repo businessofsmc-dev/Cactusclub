@@ -31,6 +31,7 @@ import { FanTipModal } from './FanTipModal';
 import { FanWalletModal } from './FanWalletModal';
 import { FanCommentsModal } from './FanCommentsModal';
 import { FanShopView } from './FanShopView';
+import { INITIAL_SHOP_ITEMS } from '../../data/shopData';
 
 interface FanPortalProps {
   creator: CreatorAccount;
@@ -96,6 +97,7 @@ export const FanPortal: React.FC<FanPortalProps> = ({
   // Filter posts for active creator, fallback to posts from margot if none found
   const creatorPosts = posts.filter((p) => p.creatorId === activeCreator.id);
   const displayedPosts = creatorPosts.length > 0 ? creatorPosts : posts.filter((p) => p.creatorId === 'margot');
+  const creatorShopItems = INITIAL_SHOP_ITEMS.filter((item) => item.endorsedBy?.creatorId === activeCreator.id);
 
   // Handle open creator profile & feed
   const handleOpenCreatorProfile = (creatorId: string) => {
@@ -959,6 +961,85 @@ export const FanPortal: React.FC<FanPortalProps> = ({
                 </div>
               </div>
             </div>
+
+            {/* Exclusive Creator Boutique Shelf (if any items endorsed by this creator) */}
+            {creatorShopItems.length > 0 && (
+              <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-5">
+                <div className="bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-indigo-500/10 border border-pink-500/20 rounded-3xl p-4 sm:p-5 shadow-xs">
+                  <div className="flex items-center justify-between mb-3.5">
+                    <div className="flex items-center space-x-2.5">
+                      <div className="p-2 rounded-xl bg-pink-600 text-white shadow-xs">
+                        <ShoppingBag className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-xs sm:text-sm font-black text-gray-900 dark:text-white flex items-center space-x-1.5">
+                          <span>Collection Privée de {activeCreator.name}</span>
+                          <span className="px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-600 dark:text-pink-400 text-[10px] font-extrabold">
+                            {creatorShopItems.length} exclusivités
+                          </span>
+                        </h3>
+                        <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                          Lingerie, accessoires et pièces collectors recommandés par {activeCreator.name.split(' ')[0]}.
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setActiveTab('shop');
+                        sounds.playReceive();
+                        setTimeout(() => {
+                          mainScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                        }, 30);
+                      }}
+                      className="hidden sm:flex items-center space-x-1 px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer flex-shrink-0"
+                    >
+                      <span>Toute la Boutique</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {/* Horizontal Grid of Creator's Products */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {creatorShopItems.slice(0, 3).map((item) => (
+                      <div
+                        key={item.id}
+                        onClick={() => {
+                          setActiveTab('shop');
+                          sounds.playReceive();
+                          setTimeout(() => {
+                            mainScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                          }, 30);
+                        }}
+                        className="flex items-center space-x-3 p-2.5 rounded-2xl bg-white dark:bg-[#131624] border border-gray-200/90 dark:border-[#1e2338] hover:border-pink-500 transition-all cursor-pointer shadow-2xs group"
+                      >
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="w-16 h-16 rounded-xl object-cover flex-shrink-0 group-hover:scale-105 transition-transform"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <span className="text-[9px] font-extrabold text-pink-600 dark:text-pink-400 uppercase tracking-wider block truncate">
+                            {item.category}
+                          </span>
+                          <h4 className="text-xs font-bold text-gray-900 dark:text-white truncate group-hover:text-pink-500 transition-colors">
+                            {item.name}
+                          </h4>
+                          <div className="flex items-center justify-between mt-1">
+                            <span className="text-xs font-black font-mono-numbers text-gray-900 dark:text-white">
+                              ${item.price.toFixed(2)}
+                            </span>
+                            <span className="text-[10px] font-bold text-pink-600 hover:underline">
+                              Voir l'article →
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Posts Feed Area */}
             <div className="p-4 sm:p-6 space-y-6 max-w-3xl mx-auto w-full pb-16">

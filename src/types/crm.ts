@@ -57,6 +57,11 @@ export interface Fan {
   }[];
 }
 
+/**
+ * RÈGLE MÉTIER STRICTE :
+ * - Les fans n'ont AUCUN droit d'envoyer des photos, vidéos ou de fichiers (texte, emojis et pourboires uniquement).
+ * - Seuls l'administrateur et les modèles/créatrices ont l'autorisation d'envoyer des médias (photos, vidéos, audio, PPV).
+ */
 export interface ChatMessage {
   id: string;
   sender: 'fan' | 'creator';
