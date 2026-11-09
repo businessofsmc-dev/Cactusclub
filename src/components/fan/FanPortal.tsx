@@ -276,8 +276,8 @@ export const FanPortal: React.FC<FanPortalProps> = ({
           <button
             onClick={handleOpenAllCreators}
             className={`text-xs font-bold transition-all px-2.5 py-1 rounded-lg flex items-center space-x-1 cursor-pointer ${activeTab === 'creators'
-                ? 'bg-pink-500 text-white shadow-xs'
-                : 'text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10'
+              ? 'bg-pink-500 text-white shadow-xs'
+              : 'text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10'
               }`}
           >
             <span>Toutes les créatrices</span>
@@ -313,8 +313,8 @@ export const FanPortal: React.FC<FanPortalProps> = ({
                   <div className="relative p-0.5">
                     <div
                       className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full p-0.5 transition-all duration-300 ${isSelected
-                          ? 'bg-gradient-to-tr from-pink-500 via-purple-500 to-amber-400 ring-2 ring-pink-500 ring-offset-2 dark:ring-offset-[#131624] shadow-lg shadow-pink-500/30'
-                          : 'bg-gradient-to-tr from-gray-300 to-gray-400 dark:from-gray-700 dark:to-gray-600 group-hover:from-pink-400 group-hover:to-purple-500'
+                        ? 'bg-gradient-to-tr from-pink-500 via-purple-500 to-amber-400 ring-2 ring-pink-500 ring-offset-2 dark:ring-offset-[#131624] shadow-lg shadow-pink-500/30'
+                        : 'bg-gradient-to-tr from-gray-300 to-gray-400 dark:from-gray-700 dark:to-gray-600 group-hover:from-pink-400 group-hover:to-purple-500'
                         }`}
                     >
                       <img
@@ -381,8 +381,8 @@ export const FanPortal: React.FC<FanPortalProps> = ({
           <button
             onClick={handleOpenAllCreators}
             className={`py-3 px-3.5 border-b-2 transition-all cursor-pointer flex items-center space-x-2 flex-shrink-0 ${activeTab === 'creators'
-                ? 'border-pink-600 text-pink-600 dark:text-pink-400 bg-pink-50/50 dark:bg-pink-500/5'
-                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              ? 'border-pink-600 text-pink-600 dark:text-pink-400 bg-pink-50/50 dark:bg-pink-500/5'
+              : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               }`}
           >
             <Users className="w-4 h-4 text-pink-500" />
@@ -395,8 +395,8 @@ export const FanPortal: React.FC<FanPortalProps> = ({
               sounds.playReceive();
             }}
             className={`py-3 px-3.5 border-b-2 transition-all cursor-pointer flex items-center space-x-2 flex-shrink-0 ${activeTab === 'feed'
-                ? 'border-blue-600 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-500/5'
-                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-500/5'
+              : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               }`}
           >
             <ImageIcon className="w-4 h-4 text-blue-500" />
@@ -406,8 +406,8 @@ export const FanPortal: React.FC<FanPortalProps> = ({
           <button
             onClick={() => handleStartChatWithCreator(activeCreator.id)}
             className={`py-3 px-3.5 border-b-2 transition-all cursor-pointer flex items-center space-x-2 flex-shrink-0 ${activeTab === 'chat'
-                ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-500/5'
-                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-500/5'
+              : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               }`}
           >
             <MessageCircle className="w-4 h-4 text-emerald-500" />
@@ -421,8 +421,8 @@ export const FanPortal: React.FC<FanPortalProps> = ({
               sounds.playReceive();
             }}
             className={`py-3 px-3.5 border-b-2 transition-all cursor-pointer flex items-center space-x-2 flex-shrink-0 ${activeTab === 'subscribe'
-                ? 'border-amber-500 text-amber-500 bg-amber-50/50 dark:bg-amber-500/5'
-                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              ? 'border-amber-500 text-amber-500 bg-amber-50/50 dark:bg-amber-500/5'
+              : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               }`}
           >
             <Crown className="w-4 h-4 text-amber-500" />
@@ -431,7 +431,7 @@ export const FanPortal: React.FC<FanPortalProps> = ({
         </div>
 
         {/* Current Active Creator Indicator */}
-        <div 
+        <div
           onClick={() => handleOpenCreatorProfile(activeCreator.id)}
           className="hidden md:flex items-center space-x-2 text-[11px] text-gray-400 pl-4 cursor-pointer hover:opacity-80 transition-opacity"
           title={`Voir le profil de ${activeCreator.name}`}
@@ -471,8 +471,8 @@ export const FanPortal: React.FC<FanPortalProps> = ({
                     key={c.id}
                     onClick={() => handleOpenCreatorProfile(c.id)}
                     className={`rounded-3xl bg-white dark:bg-[#131624] border-2 transition-all duration-300 overflow-hidden shadow-xs flex flex-col justify-between group cursor-pointer ${isSelected
-                        ? 'border-pink-500 shadow-lg shadow-pink-500/10 ring-2 ring-pink-500/20'
-                        : 'border-gray-200/90 dark:border-[#1e2338] hover:border-pink-500 hover:shadow-xl hover:shadow-pink-500/10 hover:-translate-y-0.5'
+                      ? 'border-pink-500 shadow-lg shadow-pink-500/10 ring-2 ring-pink-500/20'
+                      : 'border-gray-200/90 dark:border-[#1e2338] hover:border-pink-500 hover:shadow-xl hover:shadow-pink-500/10 hover:-translate-y-0.5'
                       }`}
                   >
                     <div>
@@ -485,10 +485,17 @@ export const FanPortal: React.FC<FanPortalProps> = ({
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/75 to-transparent"></div>
 
-                        {/* Badge VIP / Catégorie */}
-                        <span className="absolute top-2.5 right-2.5 px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-[10px] font-bold text-white shadow-xs">
-                          {c.category || 'VIP'}
-                        </span>
+                        {/* Badges on Cover */}
+                        <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none">
+                          <span className="px-2.5 py-1 rounded-full bg-emerald-500/90 text-white text-[10px] font-bold flex items-center space-x-1 shadow-sm">
+                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                            <span>EN DIRECT</span>
+                          </span>
+
+                          <span className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[10px] font-bold text-white shadow-xs border border-white/10">
+                            {c.category || 'VIP'}
+                          </span>
+                        </div>
 
                         {/* Overlay hover prompt */}
                         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30 backdrop-blur-2xs">
@@ -501,8 +508,10 @@ export const FanPortal: React.FC<FanPortalProps> = ({
 
                       {/* Avatar & Identité */}
                       <div className="px-5 pb-3 relative">
-                        <div className="flex items-end justify-between -mt-12 mb-2">
-                          <div className="relative p-0.5 rounded-full bg-gradient-to-tr from-pink-500 to-purple-600 shadow-xl">
+                        {/* Avatar & Subscriber Row - Zero Overlap */}
+                        <div className="flex items-center justify-between mb-2">
+                          {/* Avatar pulling up on cover */}
+                          <div className="-mt-10 relative p-0.5 rounded-full bg-gradient-to-tr from-pink-500 to-purple-600 shadow-xl">
                             <img
                               src={c.avatar}
                               alt={c.name}
@@ -511,17 +520,16 @@ export const FanPortal: React.FC<FanPortalProps> = ({
                             <span className="absolute bottom-1 right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white dark:border-[#131624] animate-pulse"></span>
                           </div>
 
-                          <div className="text-right">
-                            <span className="text-[11px] font-bold text-emerald-500 flex items-center justify-end space-x-1">
-                              <Clock className="w-3 h-3" />
-                              <span>{c.responseSpeed || '~2 min'}</span>
-                            </span>
-                            <span className="text-[10px] text-gray-400">
-                              {c.subscribersCount || '25k'} abonnés
+                          {/* Subscriber Count Badge (Cleanly inside card body, 0 overlap) */}
+                          <div className="text-right pt-2">
+                            <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full bg-gray-100 dark:bg-[#1f253d] text-gray-700 dark:text-gray-300 text-xs font-bold shadow-2xs">
+                              <span className="font-mono-numbers text-pink-600 dark:text-pink-400 font-extrabold">{c.subscribersCount || '25k'}</span>
+                              <span className="text-[10px] text-gray-500 dark:text-gray-400">abonnés</span>
                             </span>
                           </div>
                         </div>
 
+                        {/* Name & Handle */}
                         <div className="flex items-center space-x-1.5 mt-1">
                           <h3 className="font-black text-base text-gray-900 dark:text-white group-hover:text-pink-500 transition-colors">
                             {c.name}
@@ -532,8 +540,19 @@ export const FanPortal: React.FC<FanPortalProps> = ({
                           {c.handle}
                         </span>
 
+                        {/* Response Speed & Rating Pill Row */}
+                        <div className="flex items-center space-x-2 mt-2">
+                          <span className="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold flex items-center space-x-1">
+                            <Clock className="w-3 h-3" />
+                            <span>Réponse {c.responseSpeed || '~2 min'}</span>
+                          </span>
+                          <span className="px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold">
+                            ★ {c.rating || 4.9}
+                          </span>
+                        </div>
+
                         {/* Bio */}
-                        <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-3 mt-2.5 leading-relaxed">
+                        <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 mt-2.5 leading-relaxed">
                           {c.bio}
                         </p>
                       </div>
