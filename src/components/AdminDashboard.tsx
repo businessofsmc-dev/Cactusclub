@@ -33,6 +33,7 @@ import {
   Copy,
   Sparkles,
   ArrowLeft,
+  Pencil,
   Tag as TagIcon
 } from 'lucide-react';
 import type { CannedScript, ScriptMediaTag } from '../types/crm';
@@ -53,6 +54,7 @@ interface AdminDashboardProps {
   onOpenSettings?: () => void;
   scripts?: CannedScript[];
   onAddScript?: (script: Omit<CannedScript, 'id'>) => void;
+  onUpdateScript?: (script: CannedScript) => void;
   onDeleteScript?: (id: string) => void;
 }
 
@@ -110,6 +112,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onOpenSettings,
   scripts = CANNED_SCRIPTS,
   onAddScript,
+  onUpdateScript,
   onDeleteScript,
 }) => {
   const dashboardScripts = scripts.length > 0 ? scripts : CANNED_SCRIPTS;
@@ -122,7 +125,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [scriptTagFilter, setScriptTagFilter] = useState<string | null>(null);
   const [copiedScriptId, setCopiedScriptId] = useState<string | null>(null);
 
-  // Form state for creating a script inline (NO POPUP!)
+  // Script editing state: null when creating new, script.id when editing existing
+  const [editingScriptId, setEditingScriptId] = useState<string | null>(null);
+
+  // Tag editing state inside form: null when adding new tag, tag.id when modifying tag
+  const [editingTagId, setEditingTagId] = useState<string | null>(null);
+
+  // Form state for creating / editing a script inline (NO POPUP!)
   const [formTitle, setFormTitle] = useState('');
   const [formCategory, setFormCategory] = useState<CannedScript['category']>('PPV Tease');
   const [formText, setFormText] = useState('');
@@ -232,7 +241,53 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     ? (allMediaTags.reduce((acc, curr) => acc + curr.price, 0) / allMediaTags.length).toFixed(2)
     : '18.50';
 
-  const handleAddMediaTagToForm = () => {
+  const handleStartEditScript = (script: CannedScript, targetTagId?: string) => {
+    setEditingScriptId(script.id);
+    setFormTitle(script.title);
+    setFormCategory(script.category);
+    setFormText(script.text);
+    setFormMediaTags(script.mediaTags ? script.mediaTags.map((mt) => ({ ...mt })) : []);
+    setIsCreatingScriptInline(true);
+    setFormErrorMsg(null);
+    sounds.playReceive();
+
+    if (targetTagId && script.mediaTags) {
+      const target = script.mediaTags.find((t) => t.id === targetTagId);
+      if (target) {
+        handleStartEditTag(target);
+      }
+    }
+  };
+
+  const handleCancelScriptForm = () => {
+    setFormTitle('');
+    setFormText('');
+    setFormMediaTags([]);
+    setEditingScriptId(null);
+    setEditingTagId(null);
+    setFormErrorMsg(null);
+    setIsCreatingScriptInline(false);
+  };
+
+  const handleStartEditTag = (tag: ScriptMediaTag) => {
+    setEditingTagId(tag.id);
+    setTagInputName(tag.name);
+    setTagInputType(tag.type);
+    setTagInputPrice(tag.price.toFixed(2));
+    setTagInputUrl(tag.url);
+    setTagInputTitle(tag.title || '');
+    sounds.playReceive();
+  };
+
+  const handleCancelEditTag = () => {
+    setEditingTagId(null);
+    setTagInputName('');
+    setTagInputUrl('');
+    setTagInputTitle('');
+    setTagInputPrice('15.00');
+  };
+
+  const handleAddOrUpdateMediaTagToForm = () => {
     if (!tagInputName.trim()) {
       setFormErrorMsg('Veuillez renseigner un nom de tag (ex: douche_video, lingerie_pack).');
       return;
@@ -248,16 +303,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
 
     const cleanTagName = tagInputName.trim().replace(/^#/, '').toLowerCase().replace(/\s+/g, '_');
-    const newMediaTag: ScriptMediaTag = {
-      id: `mt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-      name: cleanTagName,
-      type: tagInputType,
-      url: tagInputUrl.trim(),
-      price: priceNum,
-      title: tagInputTitle.trim() || undefined,
-    };
 
-    setFormMediaTags((prev) => [...prev, newMediaTag]);
+    if (editingTagId) {
+      setFormMediaTags((prev) =>
+        prev.map((t) =>
+          t.id === editingTagId
+            ? {
+                ...t,
+                name: cleanTagName,
+                type: tagInputType,
+                url: tagInputUrl.trim(),
+                price: priceNum,
+                title: tagInputTitle.trim() || undefined,
+              }
+            : t
+        )
+      );
+      setEditingTagId(null);
+    } else {
+      const newMediaTag: ScriptMediaTag = {
+        id: `mt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        name: cleanTagName,
+        type: tagInputType,
+        url: tagInputUrl.trim(),
+        price: priceNum,
+        title: tagInputTitle.trim() || undefined,
+      };
+      setFormMediaTags((prev) => [...prev, newMediaTag]);
+    }
+
     setTagInputName('');
     setTagInputUrl('');
     setTagInputTitle('');
@@ -268,6 +342,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const handleRemoveMediaTagFromForm = (tagId: string) => {
     setFormMediaTags((prev) => prev.filter((t) => t.id !== tagId));
+    if (editingTagId === tagId) {
+      handleCancelEditTag();
+    }
   };
 
   const handleSaveScriptInline = (e: React.FormEvent) => {
@@ -284,25 +361,49 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const extractedTags = formMediaTags.map((mt) => mt.name);
     const firstMedia = formMediaTags[0];
 
-    const scriptPayload: Omit<CannedScript, 'id'> = {
-      title: formTitle.trim(),
-      category: formCategory,
-      text: formText.trim(),
-      price: firstMedia ? firstMedia.price : undefined,
-      tags: extractedTags,
-      mediaTags: formMediaTags,
-      media: firstMedia
-        ? {
-            type: firstMedia.type === 'video' ? 'video' : 'image',
-            url: firstMedia.url,
-            isLocked: true,
-            price: firstMedia.price,
-          }
-        : undefined,
-    };
+    if (editingScriptId) {
+      const updatedScript: CannedScript = {
+        id: editingScriptId,
+        title: formTitle.trim(),
+        category: formCategory,
+        text: formText.trim(),
+        price: firstMedia ? firstMedia.price : undefined,
+        tags: extractedTags,
+        mediaTags: formMediaTags,
+        media: firstMedia
+          ? {
+              type: firstMedia.type === 'video' ? 'video' : 'image',
+              url: firstMedia.url,
+              isLocked: true,
+              price: firstMedia.price,
+            }
+          : undefined,
+      };
 
-    if (onAddScript) {
-      onAddScript(scriptPayload);
+      if (onUpdateScript) {
+        onUpdateScript(updatedScript);
+      }
+    } else {
+      const scriptPayload: Omit<CannedScript, 'id'> = {
+        title: formTitle.trim(),
+        category: formCategory,
+        text: formText.trim(),
+        price: firstMedia ? firstMedia.price : undefined,
+        tags: extractedTags,
+        mediaTags: formMediaTags,
+        media: firstMedia
+          ? {
+              type: firstMedia.type === 'video' ? 'video' : 'image',
+              url: firstMedia.url,
+              isLocked: true,
+              price: firstMedia.price,
+            }
+          : undefined,
+      };
+
+      if (onAddScript) {
+        onAddScript(scriptPayload);
+      }
     }
 
     sounds.playCash();
@@ -313,11 +414,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       colors: ['#00aff0', '#10b981', '#f59e0b', '#8b5cf6'],
     });
 
-    setFormTitle('');
-    setFormText('');
-    setFormMediaTags([]);
-    setFormErrorMsg(null);
-    setIsCreatingScriptInline(false);
+    handleCancelScriptForm();
   };
 
   const handleCopyScriptText = (text: string, id: string) => {
@@ -348,7 +445,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-bold hover:bg-blue-100 transition-colors cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Retour au Dashboard</span>
+              <span>Retour au Tableau de bord</span>
             </button>
           )}
         </div>
@@ -357,7 +454,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           {/* Operational status pill */}
           <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#ecfdf5] dark:bg-emerald-950/40 text-[#00b074] font-semibold text-xs border border-emerald-200/60 dark:border-emerald-800/40">
             <span className="w-2 h-2 rounded-full bg-[#00b074] animate-pulse"></span>
-            <span>Operational</span>
+            <span>Opérationnel</span>
           </div>
 
           {/* Timezone pill */}
@@ -464,7 +561,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 }`}
               >
                 <LayoutDashboard className="w-4 h-4 text-gray-900 dark:text-white" />
-                <span>Dashboard</span>
+                <span>Tableau de bord</span>
               </button>
 
               {/* OF Manager */}
@@ -475,17 +572,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 >
                   <div className="flex items-center space-x-2.5">
                     <FolderLock className="w-4 h-4 text-gray-500" />
-                    <span>OF Manager</span>
+                    <span>Gestionnaire Cactus</span>
                   </div>
                   <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${ofManagerOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {ofManagerOpen && (
                   <div className="pl-6 pr-2 py-1 space-y-1">
                     <div className="px-2 py-1 text-[11px] text-gray-500 hover:text-blue-500 cursor-pointer rounded">
-                      Auto-Scheduler
+                      Planificateur Auto
                     </div>
                     <div onClick={onOpenVault} className="px-2 py-1 text-[11px] text-gray-500 hover:text-blue-500 cursor-pointer rounded">
-                      Vault Storage
+                      Coffre & Médias
                     </div>
                   </div>
                 )}
@@ -499,17 +596,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 >
                   <div className="flex items-center space-x-2.5">
                     <BarChart3 className="w-4 h-4 text-gray-500" />
-                    <span>Analytics</span>
+                    <span>Analytiques</span>
                   </div>
                   <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${analyticsOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {analyticsOpen && (
                   <div className="pl-6 pr-2 py-1 space-y-1">
                     <div className="px-2 py-1 text-[11px] text-gray-500 hover:text-blue-500 cursor-pointer rounded">
-                      Fan Retention
+                      Rétention Fans
                     </div>
                     <div className="px-2 py-1 text-[11px] text-gray-500 hover:text-blue-500 cursor-pointer rounded">
-                      PPV Conversion
+                      Conversion PPV
                     </div>
                   </div>
                 )}
@@ -540,7 +637,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 >
                   <div className="flex items-center space-x-2.5">
                     <TrendingUp className="w-4 h-4 text-gray-500" />
-                    <span>Growth</span>
+                    <span>Croissance</span>
                   </div>
                   <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${growthOpen ? 'rotate-180' : ''}`} />
                 </button>
@@ -552,14 +649,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       className="w-full flex items-center space-x-2 px-2 py-1.5 rounded-lg text-gray-500 hover:text-blue-500 text-[11px] cursor-pointer"
                     >
                       <Radio className="w-3.5 h-3.5" />
-                      <span>Smart Messages</span>
+                      <span>Messages Intelligents</span>
                     </button>
                     <button
                       onClick={onOpenVault}
                       className="w-full flex items-center space-x-2 px-2 py-1.5 rounded-lg text-gray-500 hover:text-blue-500 text-[11px] cursor-pointer"
                     >
                       <FolderLock className="w-3.5 h-3.5" />
-                      <span>Vault Pro</span>
+                      <span>Coffre-fort Pro</span>
                     </button>
                     <button
                       onClick={() => {
@@ -574,7 +671,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     >
                       <div className="flex items-center space-x-2">
                         <FileText className="w-3.5 h-3.5" />
-                        <span>Scripts</span>
+                        <span>Scripts de Vente</span>
                       </div>
                       <span className="px-1.5 py-0.2 rounded-full bg-blue-500/10 text-blue-600 text-[9px] font-bold">
                         {dashboardScripts.length}
@@ -592,14 +689,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 >
                   <div className="flex items-center space-x-2.5">
                     <Users className="w-4 h-4 text-gray-500" />
-                    <span>Employees</span>
+                    <span>Employés & Chatters</span>
                   </div>
                   <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${employeesOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {employeesOpen && (
                   <div className="pl-6 pr-2 py-1 space-y-1">
                     <div className="px-2 py-1 text-[11px] text-gray-500 hover:text-blue-500 cursor-pointer rounded">
-                      Active Operators (2)
+                      Opérateurs Actifs (2)
                     </div>
                   </div>
                 )}
@@ -614,11 +711,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               className="w-full flex items-center space-x-2.5 px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-all cursor-pointer"
             >
               <Settings className="w-4 h-4 text-gray-400" />
-              <span>Settings</span>
+              <span>Paramètres</span>
             </button>
             <button className="w-full flex items-center space-x-2.5 px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-all cursor-pointer">
               <HelpCircle className="w-4 h-4 text-gray-400" />
-              <span>Help center</span>
+              <span>Centre d'aide</span>
             </button>
 
             <div className="pt-2 flex items-center justify-between text-[11px] text-gray-400">
@@ -667,13 +764,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
               <button
                 onClick={() => {
-                  setIsCreatingScriptInline(!isCreatingScriptInline);
+                  if (isCreatingScriptInline) {
+                    handleCancelScriptForm();
+                  } else {
+                    setIsCreatingScriptInline(true);
+                  }
                   sounds.playReceive();
                 }}
                 className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-black shadow-md shadow-blue-500/25 active:scale-95 transition-all flex items-center space-x-2 cursor-pointer self-start sm:self-auto"
               >
                 <Plus className="w-4 h-4" />
-                <span>{isCreatingScriptInline ? 'Masquer le Formulaire' : '+ Créer un Nouveau Script'}</span>
+                <span>{isCreatingScriptInline ? (editingScriptId ? 'Annuler l’Édition' : 'Masquer le Formulaire') : '+ Créer un Nouveau Script'}</span>
               </button>
             </div>
 
@@ -714,27 +815,34 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
             </div>
 
-            {/* INLINE SCRIPT CREATION FORM (NO POPUP!) */}
+            {/* INLINE SCRIPT CREATION / EDITING FORM (NO POPUP!) */}
             {isCreatingScriptInline && (
               <section className="p-5 rounded-3xl bg-white dark:bg-[#131624] border-2 border-blue-500/40 shadow-xl space-y-5 animate-in fade-in duration-200">
                 <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-[#1e2338]">
                   <div className="flex items-center space-x-2.5">
                     <div className="p-2 rounded-xl bg-blue-600 text-white shadow-xs">
-                      <Sparkles className="w-4 h-4" />
+                      {editingScriptId ? <Pencil className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
                     </div>
                     <div>
-                      <h2 className="text-sm font-black text-gray-900 dark:text-white">
-                        Créer un Script avec ses Tags Photos/Vidéos & Prix
+                      <h2 className="text-sm font-black text-gray-900 dark:text-white flex items-center space-x-2">
+                        <span>{editingScriptId ? 'Modifier le Script & ses Tags Médias' : 'Créer un Script avec ses Tags Photos/Vidéos & Prix'}</span>
+                        {editingScriptId && (
+                          <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-mono text-[10px] font-bold">
+                            Édition en cours
+                          </span>
+                        )}
                       </h2>
                       <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                        Rédigez le texte et associez un ou plusieurs tags média payants.
+                        {editingScriptId
+                          ? 'Ajustez le texte, les tags, les médias ou les prix PPV de ce script.'
+                          : 'Rédigez le texte et associez un ou plusieurs tags média payants.'}
                       </p>
                     </div>
                   </div>
 
                   <button
                     type="button"
-                    onClick={() => setIsCreatingScriptInline(false)}
+                    onClick={handleCancelScriptForm}
                     className="p-1 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 cursor-pointer"
                   >
                     <X className="w-4 h-4" />
@@ -801,7 +909,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         {formMediaTags.map((mt) => (
                           <div
                             key={mt.id}
-                            className="flex items-center justify-between p-2 rounded-xl bg-white dark:bg-[#101422] border border-gray-200 dark:border-[#222a42] shadow-2xs"
+                            className={`flex items-center justify-between p-2 rounded-xl transition-all ${
+                              editingTagId === mt.id
+                                ? 'bg-blue-500/10 dark:bg-blue-500/20 border-2 border-blue-500 shadow-sm'
+                                : 'bg-white dark:bg-[#101422] border border-gray-200 dark:border-[#222a42] shadow-2xs hover:border-gray-300'
+                            }`}
                           >
                             <div className="flex items-center space-x-2 min-w-0">
                               <div className="relative w-8 h-8 rounded-lg overflow-hidden bg-black flex-shrink-0">
@@ -820,14 +932,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               </div>
                             </div>
 
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveMediaTagFromForm(mt.id)}
-                              className="p-1 rounded-lg text-gray-400 hover:text-rose-500 cursor-pointer"
-                              title="Retirer ce tag"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
+                            <div className="flex items-center space-x-1 flex-shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => handleStartEditTag(mt)}
+                                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                                  editingTagId === mt.id
+                                    ? 'bg-blue-600 text-white'
+                                    : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30'
+                                }`}
+                                title="Modifier ce tag (nom, prix, média)"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveMediaTagFromForm(mt.id)}
+                                className="p-1.5 rounded-lg text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors cursor-pointer"
+                                title="Retirer ce tag"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -862,6 +988,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                     {/* Custom Tag input row */}
                     <div className="space-y-2 pt-2 border-t border-blue-500/15">
+                      {editingTagId && (
+                        <div className="flex items-center justify-between p-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-700 dark:text-amber-300 text-[11px] font-bold">
+                          <div className="flex items-center space-x-1.5">
+                            <Pencil className="w-3.5 h-3.5" />
+                            <span>Modification active du tag : <strong>#{tagInputName}</strong></span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleCancelEditTag}
+                            className="text-[10px] underline hover:text-amber-900 dark:hover:text-amber-100 cursor-pointer"
+                          >
+                            Annuler modification tag
+                          </button>
+                        </div>
+                      )}
+
                       <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
                         <div className="sm:col-span-2">
                           <input
@@ -905,10 +1047,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         />
                         <button
                           type="button"
-                          onClick={handleAddMediaTagToForm}
-                          className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs cursor-pointer shadow-xs whitespace-nowrap"
+                          onClick={handleAddOrUpdateMediaTagToForm}
+                          className={`px-4 py-1.5 rounded-lg text-white font-bold text-xs cursor-pointer shadow-xs whitespace-nowrap transition-all ${
+                            editingTagId
+                              ? 'bg-amber-600 hover:bg-amber-700'
+                              : 'bg-blue-600 hover:bg-blue-700'
+                          }`}
                         >
-                          + Ajouter le Tag
+                          {editingTagId ? '✓ Enregistrer le Tag' : '+ Ajouter le Tag'}
                         </button>
                       </div>
                     </div>
@@ -932,8 +1078,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <div className="flex items-center justify-end space-x-2 pt-2 border-t border-gray-100 dark:border-[#1e2338]">
                     <button
                       type="button"
-                      onClick={() => setIsCreatingScriptInline(false)}
-                      className="px-4 py-2 rounded-xl bg-gray-100 dark:bg-[#1a2033] text-gray-700 dark:text-gray-300 text-xs font-bold cursor-pointer"
+                      onClick={handleCancelScriptForm}
+                      className="px-4 py-2 rounded-xl bg-gray-100 dark:bg-[#1a2033] text-gray-700 dark:text-gray-300 text-xs font-bold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
                     >
                       Annuler
                     </button>
@@ -941,7 +1087,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       type="submit"
                       className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer"
                     >
-                      Enregistrer dans la Bibliothèque
+                      {editingScriptId ? '✓ Enregistrer les Modifications' : 'Enregistrer dans la Bibliothèque'}
                     </button>
                   </div>
                 </form>
@@ -963,13 +1109,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
               {/* Category Filter Pills */}
               <div className="flex items-center space-x-1.5 overflow-x-auto no-scrollbar pt-1 pb-1 border-b border-gray-100 dark:border-[#1e2338]">
-                {['All', 'PPV Tease', 'Greeting', 'Upsell', 'Kinky', 'Follow-up', 'Re-engage'].map((cat) => {
-                  const isSelected = scriptCategoryFilter === cat;
+                {[
+                  { id: 'All', label: 'Tous les scripts' },
+                  { id: 'PPV Tease', label: '🚿 PPV Tease' },
+                  { id: 'Greeting', label: '👋 Salutations' },
+                  { id: 'Upsell', label: '💎 Vente VIP (Upsell)' },
+                  { id: 'Kinky', label: '🔥 Kinky / Fantasmes' },
+                  { id: 'Follow-up', label: '⏳ Relances' },
+                  { id: 'Re-engage', label: '💫 Réengagement' },
+                ].map((catItem) => {
+                  const isSelected = scriptCategoryFilter === catItem.id;
                   return (
                     <button
-                      key={cat}
+                      key={catItem.id}
                       onClick={() => {
-                        setScriptCategoryFilter(cat);
+                        setScriptCategoryFilter(catItem.id);
                         sounds.playReceive();
                       }}
                       className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer flex-shrink-0 ${
@@ -978,7 +1132,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           : 'bg-gray-100 dark:bg-[#1a2033] text-gray-600 dark:text-gray-400 hover:text-blue-500'
                       }`}
                     >
-                      {cat === 'All' ? 'Tous les scripts' : cat}
+                      {catItem.label}
                     </button>
                   );
                 })}
@@ -1054,9 +1208,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           {script.mediaTags.map((mt) => (
                             <div
                               key={mt.id}
-                              className="flex items-center justify-between p-1.5 rounded-lg bg-white dark:bg-[#131624] border border-gray-200/80 dark:border-[#20273d]"
+                              className="group/tag flex items-center justify-between p-1.5 rounded-lg bg-white dark:bg-[#131624] border border-gray-200/80 dark:border-[#20273d] hover:border-blue-400/60 transition-colors"
                             >
-                              <div className="flex items-center space-x-2 min-w-0">
+                              <div
+                                onClick={() => handleStartEditScript(script, mt.id)}
+                                className="flex items-center space-x-2 min-w-0 cursor-pointer flex-1"
+                                title={`Cliquer pour modifier le tag #${mt.name}`}
+                              >
                                 <div className="relative w-7 h-7 rounded-md overflow-hidden bg-black flex-shrink-0">
                                   <img src={mt.url} alt={mt.name} className="w-full h-full object-cover" />
                                   <div className="absolute inset-0 bg-black/20 flex items-center justify-center text-white text-[9px]">
@@ -1064,7 +1222,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                   </div>
                                 </div>
                                 <div className="min-w-0">
-                                  <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400 block truncate">
+                                  <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400 block truncate hover:underline">
                                     #{mt.name}
                                   </span>
                                   {mt.title && (
@@ -1075,9 +1233,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 </div>
                               </div>
 
-                              <span className="font-mono text-xs font-black text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-md flex-shrink-0">
-                                ${mt.price.toFixed(2)}
-                              </span>
+                              <div className="flex items-center space-x-1.5 flex-shrink-0">
+                                <span className="font-mono text-xs font-black text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-md">
+                                  ${mt.price.toFixed(2)}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleStartEditScript(script, mt.id)}
+                                  className="p-1 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer transition-colors"
+                                  title={`Modifier ce tag (#${mt.name})`}
+                                >
+                                  <Pencil className="w-3 h-3" />
+                                </button>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -1096,12 +1264,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               sounds.playReceive();
                             }
                           }}
-                          className="p-1 text-gray-400 hover:text-rose-500 cursor-pointer"
-                          title="Supprimer"
+                          className="p-1.5 text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg cursor-pointer transition-colors"
+                          title="Supprimer ce script"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       )}
+                      <button
+                        type="button"
+                        onClick={() => handleStartEditScript(script)}
+                        className="flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 text-xs font-bold transition-all cursor-pointer"
+                        title="Modifier ce script et ses tags"
+                      >
+                        <Pencil className="w-3 h-3" />
+                        <span>Modifier</span>
+                      </button>
                     </div>
 
                     <button
@@ -1135,7 +1312,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <section className="bg-white dark:bg-[#131624] rounded-2xl border border-gray-200/80 dark:border-[#1e2338] shadow-xs p-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-100 dark:border-[#1c2238] gap-3">
                 <div className="flex items-center space-x-2 text-sm font-bold text-gray-900 dark:text-white">
-                  <span>Creator earnings overview</span>
+                  <span>Aperçu des revenus créatrice</span>
                   <Info className="w-3.5 h-3.5 text-gray-400 cursor-pointer" />
                   <span className="text-xs text-gray-400 font-medium">UTC+01:00</span>
                   <Info className="w-3.5 h-3.5 text-gray-400 cursor-pointer" />
@@ -1146,17 +1323,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     onClick={() => setEarningsType(earningsType === 'net' ? 'gross' : 'net')}
                     className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-white dark:bg-[#1b2033] border border-gray-200 dark:border-[#252c42] text-xs font-medium text-gray-700 dark:text-gray-300 hover:border-gray-300 cursor-pointer"
                   >
-                    <span>{earningsType === 'net' ? 'Net earnings' : 'Gross earnings'}</span>
+                    <span>{earningsType === 'net' ? 'Revenus nets' : 'Revenus bruts'}</span>
                     <ChevronDown className="w-3.5 h-3.5 text-gray-400 ml-1" />
                   </button>
 
                   <div className="flex items-center p-0.5 rounded-lg bg-gray-100/80 dark:bg-[#1b2033] text-xs font-medium">
                     {(['yesterday', 'today', 'week', 'month'] as const).map((p) => {
                       const label = {
-                        yesterday: 'Yesterday',
-                        today: 'Today',
-                        week: 'This week',
-                        month: 'This month',
+                        yesterday: 'Hier',
+                        today: "Aujourd'hui",
+                        week: 'Cette semaine',
+                        month: 'Ce mois',
                       }[p];
                       const isActive = period === p;
                       return (
@@ -1199,7 +1376,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <span className="font-extrabold tracking-tight">of</span>
                   </div>
                   <span className="text-xs text-[#00aff0] font-semibold mt-2.5">
-                    Total earnings
+                    Revenus totaux Cactusclub
                   </span>
                   <span className="text-3xl font-extrabold font-mono text-[#00aff0] tracking-tight mt-0.5">
                     {metricsData.total}
@@ -1213,7 +1390,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <div className="text-lg font-bold font-mono text-gray-900 dark:text-white">
                         {metricsData.subs}
                       </div>
-                      <div className="text-[11px] text-gray-400 font-medium">Subscriptions</div>
+                      <div className="text-[11px] text-gray-400 font-medium">Abonnements</div>
                     </div>
                     <div className="w-8 h-8 rounded-lg bg-[#e6faf3] dark:bg-emerald-950/40 text-[#00b074] flex items-center justify-center">
                       <Bookmark className="w-4 h-4" />
@@ -1225,7 +1402,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <div className="text-lg font-bold font-mono text-gray-900 dark:text-white">
                         {metricsData.tips}
                       </div>
-                      <div className="text-[11px] text-gray-400 font-medium">Tips</div>
+                      <div className="text-[11px] text-gray-400 font-medium">Pourboires (Tips)</div>
                     </div>
                     <div className="w-8 h-8 rounded-lg bg-[#edf5fe] dark:bg-blue-950/40 text-[#2b7fff] flex items-center justify-center">
                       <Lightbulb className="w-4 h-4" />
@@ -1240,7 +1417,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <div className="text-lg font-bold font-mono text-gray-900 dark:text-white">
                         {metricsData.posts}
                       </div>
-                      <div className="text-[11px] text-gray-400 font-medium">Posts</div>
+                      <div className="text-[11px] text-gray-400 font-medium">Publications (Posts)</div>
                     </div>
                     <div className="w-8 h-8 rounded-lg bg-[#e6fbfb] dark:bg-cyan-950/40 text-[#00c5c5] flex items-center justify-center">
                       <FileCheck className="w-4 h-4" />
@@ -1252,7 +1429,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <div className="text-lg font-bold font-mono text-gray-900 dark:text-white">
                         {metricsData.referrals}
                       </div>
-                      <div className="text-[11px] text-gray-400 font-medium">Referrals</div>
+                      <div className="text-[11px] text-gray-400 font-medium">Parrainages</div>
                     </div>
                     <div className="w-8 h-8 rounded-lg bg-[#fff2ed] dark:bg-orange-950/40 text-[#ff7043] flex items-center justify-center">
                       <Share2 className="w-4 h-4" />
@@ -1267,7 +1444,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <div className="text-lg font-bold font-mono text-gray-900 dark:text-white">
                         {metricsData.messages}
                       </div>
-                      <div className="text-[11px] text-gray-400 font-medium">Messages</div>
+                      <div className="text-[11px] text-gray-400 font-medium">Messages Privés</div>
                     </div>
                     <div className="w-8 h-8 rounded-lg bg-[#f5eefd] dark:bg-purple-950/40 text-[#a855f7] flex items-center justify-center">
                       <MessageSquare className="w-4 h-4" />
@@ -1279,7 +1456,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <div className="text-lg font-bold font-mono text-gray-900 dark:text-white">
                         {metricsData.streams}
                       </div>
-                      <div className="text-[11px] text-gray-400 font-medium">Streams</div>
+                      <div className="text-[11px] text-gray-400 font-medium">Lives / Streams</div>
                     </div>
                     <div className="w-8 h-8 rounded-lg bg-[#eef2ff] dark:bg-indigo-950/40 text-[#4f46e5] flex items-center justify-center">
                       <Radio className="w-4 h-4" />
@@ -1294,7 +1471,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               {/* Card 2: My shifts (lg:col-span-4) */}
               <section className="lg:col-span-4 bg-white dark:bg-[#131624] rounded-2xl border border-gray-200/80 dark:border-[#1e2338] shadow-xs p-5 flex flex-col justify-between">
                 <div className="flex items-center space-x-1.5 text-sm font-bold text-gray-900 dark:text-white">
-                  <span>My shifts</span>
+                  <span>Mes créneaux de travail</span>
                   <Info className="w-3.5 h-3.5 text-gray-400 cursor-pointer" />
                 </div>
 
@@ -1318,7 +1495,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <span className="w-3.5 h-0.5 bg-gray-900 dark:bg-white rounded-full"></span>
                     </div>
                   </div>
-                  <span className="text-xs font-semibold text-gray-400 mt-2">No data</span>
+                  <span className="text-xs font-semibold text-gray-400 mt-2">Aucun créneau planifié</span>
                 </div>
 
                 <div />
@@ -1327,7 +1504,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               {/* Card 3: Employee sales (lg:col-span-8) */}
               <section className="lg:col-span-8 bg-white dark:bg-[#131624] rounded-2xl border border-gray-200/80 dark:border-[#1e2338] shadow-xs p-5">
                 <div className="flex items-center space-x-1.5 text-sm font-bold text-gray-900 dark:text-white mb-2">
-                  <span>Employee sales</span>
+                  <span>Ventes par employé / chatter</span>
                   <Info className="w-3.5 h-3.5 text-gray-400 cursor-pointer" />
                 </div>
 
@@ -1437,7 +1614,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <section className="bg-white dark:bg-[#131624] rounded-2xl border border-gray-200/80 dark:border-[#1e2338] shadow-xs p-5">
               <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-[#1c2238]">
                 <div className="flex items-center space-x-1.5 text-sm font-bold text-gray-900 dark:text-white">
-                  <span>Scheduled hours</span>
+                  <span>Horaires & shifts planifiés</span>
                   <Info className="w-3.5 h-3.5 text-gray-400 cursor-pointer" />
                 </div>
                 <span className="text-xs text-gray-400 font-medium">3 shifts actifs aujourd'hui</span>
@@ -1497,7 +1674,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* Floating Support Widget on Bottom-Right matching exemplar */}
       <button
         onClick={onNavigateToMessages}
-        title="Open Support / Messages"
+        title="Ouvrir le Support / Messages"
         className="fixed bottom-6 right-6 w-11 h-11 rounded-full bg-black text-white flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition-all z-50 cursor-pointer"
       >
         <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">

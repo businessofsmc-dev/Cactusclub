@@ -215,6 +215,21 @@ function DashboardApp() {
     });
   };
 
+  const handleUpdateScript = (updatedScript: CannedScript) => {
+    setScripts((prev) => {
+      const updated = prev.map((s) => (s.id === updatedScript.id ? updatedScript : s));
+      try {
+        localStorage.setItem('cactus_scripts', JSON.stringify(updated));
+      } catch { }
+      return updated;
+    });
+    addToast({
+      type: 'success',
+      title: 'Script Modifié',
+      description: `"${updatedScript.title}" a été mis à jour avec ses tags et tarifs.`,
+    });
+  };
+
   // Modals state
   const [isScriptsOpen, setIsScriptsOpen] = useState(false);
   const [isPPVOpen, setIsPPVOpen] = useState(false);
@@ -1052,6 +1067,7 @@ function DashboardApp() {
           onOpenVault={() => setIsVaultOpen(true)}
           scripts={scripts}
           onAddScript={handleAddScript}
+          onUpdateScript={handleUpdateScript}
           onDeleteScript={handleDeleteScript}
           onOpenBroadcast={() => setIsBroadcastOpen(true)}
           onOpenSettings={() => setIsSettingsOpen(true)}
