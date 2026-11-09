@@ -8,19 +8,16 @@ import {
   Plus, 
   Trash2, 
   Sparkles, 
-  Tag as TagIcon, 
   Layers, 
   Copy, 
   Flame, 
   Image as ImageIcon,
-  Video as VideoIcon,
   Play,
-  Lock,
-  Eye,
   Hash,
-  ArrowRight
+  ArrowRight,
+  Tag as TagIcon
 } from 'lucide-react';
-import type { CannedScript } from '../types/crm';
+import type { CannedScript, ScriptMediaTag } from '../types/crm';
 import { CANNED_SCRIPTS } from '../data/mockData';
 import { sounds } from '../utils/sound';
 import confetti from 'canvas-confetti';
@@ -28,7 +25,7 @@ import confetti from 'canvas-confetti';
 interface ScriptsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onApplyScript?: (script: CannedScript) => void;
+  onApplyScript?: (script: CannedScript, selectedTag?: ScriptMediaTag) => void;
   scripts?: CannedScript[];
   onAddScript?: (script: Omit<CannedScript, 'id'>) => void;
   onDeleteScript?: (id: string) => void;
@@ -46,41 +43,48 @@ const CATEGORIES: ('All' | CannedScript['category'])[] = [
   'Re-engage',
 ];
 
-const POPULAR_TAGS = [
-  'douche',
-  'lingerie',
-  'video',
-  'photo',
-  'ppv',
-  'kinky',
-  'whale',
-  'relance',
-  'nuit',
-  'tease',
-  'exclusif',
-  'bain'
-];
-
-const PRESET_MEDIA_SAMPLES = [
+const PRESET_MEDIA_TAGS: Omit<ScriptMediaTag, 'id'>[] = [
   {
-    type: 'video' as const,
-    label: '🚿 Extrait Douche Chaude',
+    name: 'douche_video',
+    type: 'video',
     url: 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?auto=format&fit=crop&w=800&q=80',
+    price: 15,
+    title: 'Extrait Douche Chaude 4K (45s)',
   },
   {
-    type: 'image' as const,
-    label: '🖤 Shooting Lingerie Dentelle',
+    name: 'douche_photo',
+    type: 'photo',
+    url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80',
+    price: 10,
+    title: 'Selfie Miroir Buée',
+  },
+  {
+    name: 'lingerie_dentelle',
+    type: 'photo',
     url: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=800&q=80',
+    price: 25,
+    title: 'Pack 5 Photos Dentelle',
   },
   {
-    type: 'image' as const,
-    label: '💋 Regard Sensuel Privé',
-    url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    type: 'video' as const,
-    label: '🎬 Teaser Coulisses 4K',
+    name: 'lingerie_video',
+    type: 'video',
     url: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80',
+    price: 35,
+    title: 'Vidéo Essayage Privé (2min)',
+  },
+  {
+    name: 'regard_sensuel',
+    type: 'photo',
+    url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
+    price: 12,
+    title: 'Photo Regard Braise',
+  },
+  {
+    name: 'kinky_clip',
+    type: 'video',
+    url: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=800&q=80',
+    price: 20,
+    title: 'Clip Teasing Soirée',
   },
 ];
 
@@ -90,37 +94,50 @@ const TEMPLATES: Omit<CannedScript, 'id'>[] = [
     category: 'PPV Tease',
     text: "Je viens tout juste de sortir de la douche, l'eau était tellement chaude... J'ai filmé un clip très intime rien que pour toi. Tu veux voir ? 🙈💦",
     price: 15,
-    tags: ['douche', 'tease', 'video', 'ppv'],
-    media: {
-      type: 'video',
-      url: 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?auto=format&fit=crop&w=800&q=80',
-      isLocked: true,
-      price: 15,
-    },
+    tags: ['douche', 'tease', 'video'],
+    mediaTags: [
+      {
+        id: 'mt-1',
+        name: 'douche_video',
+        type: 'video',
+        url: 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?auto=format&fit=crop&w=800&q=80',
+        price: 15,
+        title: 'Vidéo Douche 4K (45s)',
+      },
+      {
+        id: 'mt-2',
+        name: 'douche_photo',
+        type: 'photo',
+        url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80',
+        price: 10,
+        title: 'Photo Miroir Buée',
+      },
+    ],
   },
   {
     title: '📸 Pack Photos Lingerie 4K',
     category: 'Upsell',
     text: "J'ai reçu ce nouvel ensemble de lingerie en dentelle noire que tu aimais... J'ai pris 5 photos ultra détaillées sous la lumière du soleil. Tu veux débloquer le pack secret ? 🖤",
     price: 25,
-    tags: ['photos', 'lingerie', 'pack', 'ppv'],
-    media: {
-      type: 'image',
-      url: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=800&q=80',
-      isLocked: true,
-      price: 25,
-    },
-  },
-  {
-    title: '🔥 Relance Sensuelle Nocturne',
-    category: 'Kinky',
-    text: "Tu dors déjà ou tu penses encore à moi ? Je n'arrive pas à trouver le sommeil ce soir, j'ai envie d'un peu de compagnie... 😏",
-    tags: ['nuit', 'relance', 'kinky', 'photo'],
-    media: {
-      type: 'image',
-      url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
-      isLocked: false,
-    },
+    tags: ['photos', 'lingerie', 'pack'],
+    mediaTags: [
+      {
+        id: 'mt-3',
+        name: 'lingerie_dentelle',
+        type: 'photo',
+        url: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=800&q=80',
+        price: 25,
+        title: 'Pack 5 Photos Dentelle',
+      },
+      {
+        id: 'mt-4',
+        name: 'lingerie_video',
+        type: 'video',
+        url: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80',
+        price: 35,
+        title: 'Vidéo Essayage Privé (2min)',
+      },
+    ],
   },
 ];
 
@@ -137,23 +154,23 @@ export const ScriptsModal: React.FC<ScriptsModalProps> = ({
   const [viewMode, setViewMode] = useState<'list' | 'create'>(initialMode);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [selectedMediaTagFilter, setSelectedMediaTagFilter] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // New script form state
   const [newTitle, setNewTitle] = useState('');
   const [newCategory, setNewCategory] = useState<CannedScript['category']>('PPV Tease');
   const [newText, setNewText] = useState('');
-  const [newPrice, setNewPrice] = useState<string>('');
-  const [tagsList, setTagsList] = useState<string[]>(['vente']);
-  const [customTagInput, setCustomTagInput] = useState('');
-  
-  // Media attachment state
-  const [hasMedia, setHasMedia] = useState(false);
-  const [mediaType, setMediaType] = useState<'image' | 'video'>('image');
-  const [mediaUrl, setMediaUrl] = useState('');
-  const [mediaIsLocked, setMediaIsLocked] = useState(true);
-  const [mediaPrice, setMediaPrice] = useState<string>('15.00');
+
+  // Media tags list for the current script being created
+  const [scriptMediaTags, setScriptMediaTags] = useState<ScriptMediaTag[]>([]);
+
+  // Current media tag form state to add
+  const [tagName, setTagName] = useState('');
+  const [tagMediaType, setTagMediaType] = useState<'photo' | 'video'>('video');
+  const [tagUrl, setTagUrl] = useState('');
+  const [tagPrice, setTagPrice] = useState<string>('15.00');
+  const [tagTitle, setTagTitle] = useState('');
 
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -168,22 +185,26 @@ export const ScriptsModal: React.FC<ScriptsModalProps> = ({
 
   const currentScripts = scripts.length > 0 ? scripts : CANNED_SCRIPTS;
 
-  // Filter scripts by category, search text, and tag
+  // Filter scripts
   const filtered = currentScripts.filter((s) => {
     const matchCat = selectedCategory === 'All' || s.category === selectedCategory;
-    const matchTag = !selectedTag || s.tags.includes(selectedTag);
+    const matchTagFilter =
+      !selectedMediaTagFilter ||
+      s.tags.includes(selectedMediaTagFilter) ||
+      (s.mediaTags && s.mediaTags.some((mt) => mt.name === selectedMediaTagFilter));
     const matchSearch =
       s.title.toLowerCase().includes(search.toLowerCase()) ||
       s.text.toLowerCase().includes(search.toLowerCase()) ||
-      s.tags.some((t) => t.toLowerCase().includes(search.toLowerCase()));
-    return matchCat && matchTag && matchSearch;
+      s.tags.some((t) => t.toLowerCase().includes(search.toLowerCase())) ||
+      (s.mediaTags && s.mediaTags.some((mt) => mt.name.toLowerCase().includes(search.toLowerCase())));
+    return matchCat && matchTagFilter && matchSearch;
   });
 
-  const handleInsert = (script: CannedScript) => {
-    setCopiedId(script.id);
+  const handleApply = (script: CannedScript, mediaTag?: ScriptMediaTag) => {
+    setCopiedId(script.id + (mediaTag ? `-${mediaTag.id}` : ''));
     sounds.playReceive();
     if (onApplyScript) {
-      onApplyScript(script);
+      onApplyScript(script, mediaTag);
     } else {
       navigator.clipboard?.writeText(script.text);
     }
@@ -203,41 +224,62 @@ export const ScriptsModal: React.FC<ScriptsModalProps> = ({
     setNewTitle(tpl.title);
     setNewCategory(tpl.category);
     setNewText(tpl.text);
-    setNewPrice(tpl.price ? tpl.price.toString() : '');
-    setTagsList(tpl.tags);
-    if (tpl.media) {
-      setHasMedia(true);
-      setMediaType(tpl.media.type);
-      setMediaUrl(tpl.media.url);
-      setMediaIsLocked(tpl.media.isLocked || false);
-      setMediaPrice(tpl.media.price ? tpl.media.price.toString() : '15.00');
-    } else {
-      setHasMedia(false);
+    if (tpl.mediaTags) {
+      setScriptMediaTags([...tpl.mediaTags]);
     }
     setFormError(null);
     sounds.playReceive();
   };
 
-  const toggleTagInForm = (tag: string) => {
-    const cleanTag = tag.trim().toLowerCase().replace(/^#/, '');
-    if (!cleanTag) return;
-    if (tagsList.includes(cleanTag)) {
-      setTagsList(tagsList.filter((t) => t !== cleanTag));
-    } else {
-      setTagsList([...tagsList, cleanTag]);
+  const handleAddMediaTagToScript = () => {
+    if (!tagName.trim()) {
+      setFormError('Veuillez renseigner le nom du tag (ex: douche_video, lingerie_dentelle).');
+      return;
     }
+    if (!tagUrl.trim()) {
+      setFormError('Veuillez renseigner une URL de photo ou vidéo pour ce tag.');
+      return;
+    }
+
+    const priceNum = parseFloat(tagPrice.replace(',', '.'));
+    if (isNaN(priceNum) || priceNum <= 0) {
+      setFormError('Veuillez saisir un prix valide en dollars pour ce tag.');
+      return;
+    }
+
+    const cleanTagName = tagName.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+    const newMediaTag: ScriptMediaTag = {
+      id: `mt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      name: cleanTagName,
+      type: tagMediaType,
+      url: tagUrl.trim(),
+      price: priceNum,
+      title: tagTitle.trim() || undefined,
+    };
+
+    setScriptMediaTags([...scriptMediaTags, newMediaTag]);
+    sounds.playReceive();
+
+    // Reset media tag inputs
+    setTagName('');
+    setTagUrl('');
+    setTagPrice('15.00');
+    setTagTitle('');
+    setFormError(null);
+  };
+
+  const handleRemoveMediaTagFromScript = (id: string) => {
+    setScriptMediaTags(scriptMediaTags.filter((mt) => mt.id !== id));
     sounds.playReceive();
   };
 
-  const handleAddCustomTag = (e: React.KeyboardEvent | React.MouseEvent) => {
-    if ('key' in e && e.key !== 'Enter' && e.key !== ',') return;
-    e.preventDefault();
-    const cleanTag = customTagInput.trim().toLowerCase().replace(/^#/, '');
-    if (cleanTag && !tagsList.includes(cleanTag)) {
-      setTagsList([...tagsList, cleanTag]);
-      setCustomTagInput('');
-      sounds.playReceive();
-    }
+  const handleSelectPresetTag = (preset: typeof PRESET_MEDIA_TAGS[0]) => {
+    setTagName(preset.name);
+    setTagMediaType(preset.type);
+    setTagUrl(preset.url);
+    setTagPrice(preset.price.toString());
+    setTagTitle(preset.title || '');
+    sounds.playReceive();
   };
 
   const insertVariable = (variable: string) => {
@@ -256,26 +298,31 @@ export const ScriptsModal: React.FC<ScriptsModalProps> = ({
       return;
     }
 
-    const priceNum = newPrice.trim() ? parseFloat(newPrice.replace(',', '.')) : undefined;
+    // Extract tags from mediaTags plus category
+    const extractedTags = Array.from(
+      new Set([
+        newCategory.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+        ...scriptMediaTags.map((mt) => mt.name),
+      ])
+    );
 
-    let mediaObj: CannedScript['media'] = undefined;
-    if (hasMedia && mediaUrl.trim()) {
-      const parsedMediaPrice = mediaIsLocked && mediaPrice.trim() ? parseFloat(mediaPrice.replace(',', '.')) : undefined;
-      mediaObj = {
-        type: mediaType,
-        url: mediaUrl.trim(),
-        isLocked: mediaIsLocked,
-        price: parsedMediaPrice,
-      };
-    }
+    const firstMedia = scriptMediaTags[0];
 
     const scriptPayload: Omit<CannedScript, 'id'> = {
       title: newTitle.trim(),
       category: newCategory,
       text: newText.trim(),
-      price: priceNum || (mediaObj?.isLocked ? mediaObj.price : undefined),
-      tags: tagsList.length > 0 ? tagsList : ['vente'],
-      media: mediaObj,
+      price: firstMedia ? firstMedia.price : undefined,
+      tags: extractedTags,
+      mediaTags: scriptMediaTags,
+      media: firstMedia
+        ? {
+            type: firstMedia.type === 'video' ? 'video' : 'image',
+            url: firstMedia.url,
+            isLocked: true,
+            price: firstMedia.price,
+          }
+        : undefined,
     };
 
     if (onAddScript) {
@@ -284,8 +331,8 @@ export const ScriptsModal: React.FC<ScriptsModalProps> = ({
 
     sounds.playCash();
     confetti({
-      particleCount: 80,
-      spread: 70,
+      particleCount: 90,
+      spread: 75,
       origin: { y: 0.6 },
       colors: ['#3b82f6', '#ec4899', '#f59e0b', '#10b981'],
     });
@@ -293,17 +340,14 @@ export const ScriptsModal: React.FC<ScriptsModalProps> = ({
     // Reset form
     setNewTitle('');
     setNewText('');
-    setNewPrice('');
-    setTagsList(['vente']);
-    setHasMedia(false);
-    setMediaUrl('');
+    setScriptMediaTags([]);
     setFormError(null);
     setViewMode('list');
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-xs select-none animate-in fade-in duration-200">
-      <div className="w-full max-w-3xl bg-white dark:bg-[#131624] rounded-3xl shadow-2xl border border-gray-200 dark:border-[#20263b] overflow-hidden flex flex-col max-h-[92vh]">
+      <div className="w-full max-w-3xl bg-white dark:bg-[#131624] rounded-3xl shadow-2xl border border-gray-200 dark:border-[#20263b] overflow-hidden flex flex-col max-h-[94vh]">
         {/* Header Bar */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-[#1e2338] bg-gray-50/50 dark:bg-[#151928]">
           <div className="flex items-center space-x-3">
@@ -313,14 +357,14 @@ export const ScriptsModal: React.FC<ScriptsModalProps> = ({
             <div>
               <div className="flex items-center space-x-2">
                 <h2 className="text-sm font-black text-gray-900 dark:text-white">
-                  Scripts de Vente, Photos/Vidéos & Tags
+                  Scripts avec Tags Photos/Vidéos & Prix
                 </h2>
                 <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 font-extrabold text-[10px]">
                   {currentScripts.length} scripts
                 </span>
               </div>
               <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                Créez des scripts captivants, associez des photos/vidéos PPV et organisez-les par tags.
+                Chaque tag contient sa photo ou sa vidéo exclusive associée avec son prix de déblocage.
               </p>
             </div>
           </div>
@@ -363,7 +407,7 @@ export const ScriptsModal: React.FC<ScriptsModalProps> = ({
           </div>
         </div>
 
-        {/* VIEW 1: CREATE NEW SCRIPT WITH MEDIA & TAGS */}
+        {/* VIEW 1: CREATE NEW SCRIPT WITH MEDIA TAGS */}
         {viewMode === 'create' ? (
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             {/* Quick Templates Drawer */}
@@ -371,7 +415,7 @@ export const ScriptsModal: React.FC<ScriptsModalProps> = ({
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center space-x-2 text-xs font-bold text-blue-600 dark:text-blue-400">
                   <Sparkles className="w-4 h-4" />
-                  <span>Modèles de vente pré-remplis avec médias et tags :</span>
+                  <span>Modèles de scripts pré-remplis avec leurs tags média & prix :</span>
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -383,11 +427,9 @@ export const ScriptsModal: React.FC<ScriptsModalProps> = ({
                     className="px-3 py-1.5 rounded-xl bg-white dark:bg-[#1a2033] border border-gray-200 dark:border-[#2a3350] hover:border-blue-500 text-gray-800 dark:text-gray-200 text-xs font-bold shadow-2xs hover:scale-102 transition-all cursor-pointer flex items-center space-x-2"
                   >
                     <span>{tpl.title}</span>
-                    {tpl.media?.type === 'video' ? (
-                      <span className="px-1.5 py-0.2 rounded bg-purple-500/15 text-purple-600 text-[10px]">Vidéo</span>
-                    ) : (
-                      <span className="px-1.5 py-0.2 rounded bg-pink-500/15 text-pink-600 text-[10px]">Photo</span>
-                    )}
+                    <span className="text-[10px] text-pink-600 font-extrabold bg-pink-500/10 px-1.5 py-0.2 rounded">
+                      {tpl.mediaTags?.length} tags média
+                    </span>
                     <ArrowRight className="w-3 h-3 text-blue-500" />
                   </button>
                 ))}
@@ -439,241 +481,204 @@ export const ScriptsModal: React.FC<ScriptsModalProps> = ({
                 </div>
               </div>
 
-              {/* SECTION: PHOTO OU VIDÉO ATTACHÉE */}
-              <div className="p-4 rounded-2xl bg-gray-50/80 dark:bg-[#171c2d] border border-gray-200 dark:border-[#242c44] space-y-3.5">
+              {/* SECTION MAÎTRESSE : LES TAGS QUI ONT DES PHOTOS, VIDÉOS AVEC LES PRIX */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-gray-50 to-blue-50/30 dark:from-[#161a29] dark:to-[#1a2035] border-2 border-dashed border-blue-500/30 space-y-4">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <div className="p-1.5 rounded-lg bg-pink-500/10 text-pink-600 dark:text-pink-400">
-                      <ImageIcon className="w-4 h-4" />
+                  <div className="flex items-center space-x-2.5">
+                    <div className="p-2 rounded-xl bg-blue-600 text-white shadow-xs">
+                      <TagIcon className="w-4 h-4" />
                     </div>
                     <div>
-                      <span className="text-xs font-bold text-gray-900 dark:text-white block">
-                        Attacher une Photo ou une Vidéo à ce script
-                      </span>
-                      <span className="text-[11px] text-gray-500 dark:text-gray-400">
-                        Permet au chatter d'envoyer le texte avec un média payant ou offert.
-                      </span>
+                      <h3 className="text-xs sm:text-sm font-black text-gray-900 dark:text-white flex items-center space-x-1.5">
+                        <span>Tags avec Photos & Vidéos et leurs Prix</span>
+                        <span className="px-2 py-0.2 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-extrabold">
+                          {scriptMediaTags.length} tag{scriptMediaTags.length > 1 ? 's' : ''} associé{scriptMediaTags.length > 1 ? 's' : ''}
+                        </span>
+                      </h3>
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                        Chaque tag représente un média (photo ou vidéo) avec son prix PPV verrouillé.
+                      </p>
                     </div>
-                  </div>
-
-                  {/* Toggle Media Active */}
-                  <div className="flex items-center space-x-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setHasMedia(!hasMedia);
-                        if (!hasMedia && !mediaUrl) {
-                          setMediaUrl(PRESET_MEDIA_SAMPLES[0].url);
-                          setMediaType(PRESET_MEDIA_SAMPLES[0].type);
-                        }
-                      }}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center space-x-1.5 ${
-                        hasMedia
-                          ? 'bg-pink-600 text-white shadow-xs'
-                          : 'bg-gray-200 dark:bg-[#20273f] text-gray-700 dark:text-gray-300'
-                      }`}
-                    >
-                      <span>{hasMedia ? '✓ Média Attaché' : '+ Ajouter un Média'}</span>
-                    </button>
                   </div>
                 </div>
 
-                {hasMedia && (
-                  <div className="pt-2 border-t border-gray-200/80 dark:border-[#232b45] space-y-3 animate-in fade-in">
-                    {/* Media Type & Lock Options */}
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      {/* Type Toggle: Photo vs Video */}
-                      <div className="flex items-center space-x-2">
-                        <button
-                          type="button"
-                          onClick={() => setMediaType('image')}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
-                            mediaType === 'image'
-                              ? 'bg-blue-600 text-white shadow-xs'
-                              : 'bg-gray-200 dark:bg-[#20273f] text-gray-700 dark:text-gray-300'
-                          }`}
+                {/* List of Already Added Media Tags for this script */}
+                {scriptMediaTags.length > 0 && (
+                  <div className="space-y-2 pt-1">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                      Tags configurés pour ce script :
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {scriptMediaTags.map((mt) => (
+                        <div
+                          key={mt.id}
+                          className="flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-[#131624] border border-blue-500/30 shadow-xs"
                         >
-                          <ImageIcon className="w-3.5 h-3.5" />
-                          <span>Photo</span>
-                        </button>
+                          <div className="flex items-center space-x-2.5 min-w-0">
+                            {/* Media thumbnail */}
+                            <div className="relative w-11 h-11 rounded-lg overflow-hidden bg-black flex-shrink-0 border border-gray-200 dark:border-white/10">
+                              <img
+                                src={mt.url}
+                                alt={mt.name}
+                                className="w-full h-full object-cover"
+                              />
+                              <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                                {mt.type === 'video' ? (
+                                  <Play className="w-3.5 h-3.5 fill-white text-white" />
+                                ) : (
+                                  <ImageIcon className="w-3.5 h-3.5 text-white" />
+                                )}
+                              </div>
+                            </div>
 
-                        <button
-                          type="button"
-                          onClick={() => setMediaType('video')}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
-                            mediaType === 'video'
-                              ? 'bg-purple-600 text-white shadow-xs'
-                              : 'bg-gray-200 dark:bg-[#20273f] text-gray-700 dark:text-gray-300'
-                          }`}
-                        >
-                          <VideoIcon className="w-3.5 h-3.5" />
-                          <span>Vidéo</span>
-                        </button>
-                      </div>
-
-                      {/* PPV Lock & Price */}
-                      <div className="flex items-center space-x-2">
-                        <label className="flex items-center space-x-1.5 text-xs font-bold text-gray-700 dark:text-gray-300 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={mediaIsLocked}
-                            onChange={(e) => setMediaIsLocked(e.target.checked)}
-                            className="rounded text-pink-600 focus:ring-pink-500"
-                          />
-                          <Lock className="w-3 h-3 text-amber-500" />
-                          <span>Verrouillé PPV payant</span>
-                        </label>
-
-                        {mediaIsLocked && (
-                          <div className="relative w-24">
-                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xs">$</span>
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="1"
-                              value={mediaPrice}
-                              onChange={(e) => setMediaPrice(e.target.value)}
-                              placeholder="15.00"
-                              className="w-full pl-6 pr-2 py-1 rounded-lg bg-white dark:bg-[#1a2033] border border-gray-300 dark:border-[#2b3552] text-xs text-gray-900 dark:text-white font-mono-numbers font-bold"
-                            />
+                            {/* Tag Details */}
+                            <div className="min-w-0">
+                              <div className="flex items-center space-x-1.5">
+                                <span className="font-mono text-xs font-black text-blue-600 dark:text-blue-400 truncate">
+                                  #{mt.name}
+                                </span>
+                                <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-300">
+                                  {mt.type === 'video' ? '🎬 Vidéo' : '📸 Photo'}
+                                </span>
+                              </div>
+                              <div className="flex items-center space-x-2 text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
+                                <span className="font-mono-numbers font-extrabold text-amber-500">
+                                  ${mt.price.toFixed(2)}
+                                </span>
+                                {mt.title && <span className="truncate">• {mt.title}</span>}
+                              </div>
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    </div>
 
-                    {/* Presets Chips for 1-Click Media Fill */}
-                    <div>
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">
-                        Exemples de médias disponibles dans le Vault :
-                      </span>
-                      <div className="flex flex-wrap gap-2">
-                        {PRESET_MEDIA_SAMPLES.map((sample, idx) => (
                           <button
-                            key={idx}
                             type="button"
-                            onClick={() => {
-                              setMediaUrl(sample.url);
-                              setMediaType(sample.type);
-                              sounds.playReceive();
-                            }}
-                            className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#1e2439] border border-gray-200 dark:border-[#28324e] text-[11px] text-gray-700 dark:text-gray-300 hover:border-pink-500 transition-colors flex items-center space-x-1 cursor-pointer"
+                            onClick={() => handleRemoveMediaTagFromScript(mt.id)}
+                            className="p-1 rounded-lg text-gray-400 hover:text-rose-500 hover:bg-rose-500/10 cursor-pointer transition-colors"
+                            title="Retirer ce tag"
                           >
-                            <span>{sample.label}</span>
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
-                        ))}
-                      </div>
+                        </div>
+                      ))}
                     </div>
+                  </div>
+                )}
 
-                    {/* Media URL Input & Live Thumbnail Preview */}
-                    <div className="flex items-center space-x-3">
-                      <div className="flex-1">
+                {/* Sub-form to add a new Media Tag */}
+                <div className="p-3.5 rounded-xl bg-white dark:bg-[#131624] border border-gray-200 dark:border-[#22283d] space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-gray-900 dark:text-white flex items-center space-x-1">
+                      <span>+ Ajouter un Tag avec Photo ou Vidéo & Prix</span>
+                    </span>
+
+                    {/* Quick Presets Dropdown / Buttons */}
+                    <div className="flex items-center space-x-1 overflow-x-auto no-scrollbar max-w-xs sm:max-w-md">
+                      <span className="text-[10px] text-gray-400 flex-shrink-0">Presets :</span>
+                      {PRESET_MEDIA_TAGS.slice(0, 3).map((p, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleSelectPresetTag(p)}
+                          className="px-2 py-0.5 rounded-md bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 text-[10px] font-bold font-mono transition-colors flex-shrink-0 cursor-pointer"
+                        >
+                          #{p.name} (${p.price})
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                    {/* Tag Name (Col 4) */}
+                    <div className="sm:col-span-4">
+                      <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-400 mb-1">
+                        Nom du Tag
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 font-mono text-xs">#</span>
                         <input
                           type="text"
-                          value={mediaUrl}
-                          onChange={(e) => setMediaUrl(e.target.value)}
-                          placeholder="Collez l'URL de l'image ou vidéo..."
-                          className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-[#121522] border border-gray-200 dark:border-[#27304b] text-xs text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                          value={tagName}
+                          onChange={(e) => setTagName(e.target.value)}
+                          placeholder="douche_video"
+                          className="w-full pl-6 pr-2.5 py-1.5 rounded-lg bg-gray-50 dark:bg-[#1a2033] border border-gray-200 dark:border-[#2b3550] text-xs text-gray-900 dark:text-white font-mono outline-none focus:ring-1 focus:ring-blue-500"
                         />
                       </div>
-
-                      {mediaUrl && (
-                        <div className="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-pink-500 shadow-md flex-shrink-0">
-                          <img
-                            src={mediaUrl}
-                            alt="Aperçu média"
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLElement).style.display = 'none';
-                            }}
-                          />
-                          {mediaType === 'video' && (
-                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                              <Play className="w-4 h-4 text-white fill-white" />
-                            </div>
-                          )}
-                        </div>
-                      )}
                     </div>
-                  </div>
-                )}
-              </div>
 
-              {/* SECTION: TAGS DU SCRIPT */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">
-                    Tags & Catégorisation (#mots-clés)
-                  </label>
-                  <span className="text-[10px] text-gray-400">
-                    {tagsList.length} tag{tagsList.length > 1 ? 's' : ''} sélectionné{tagsList.length > 1 ? 's' : ''}
-                  </span>
-                </div>
-
-                {/* Popular Tags Quick Chips */}
-                <div className="flex flex-wrap gap-1.5 pb-1">
-                  {POPULAR_TAGS.map((tag) => {
-                    const isSelected = tagsList.includes(tag);
-                    return (
-                      <button
-                        key={tag}
-                        type="button"
-                        onClick={() => toggleTagInForm(tag)}
-                        className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center space-x-1 ${
-                          isSelected
-                            ? 'bg-blue-600 text-white shadow-xs scale-102'
-                            : 'bg-gray-100 dark:bg-[#1a2033] text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-[#252e49] border border-gray-200/80 dark:border-[#27304b]'
-                        }`}
-                      >
-                        <Hash className="w-3 h-3 opacity-60" />
-                        <span>{tag}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Custom Tag Input */}
-                <div className="flex items-center space-x-2">
-                  <div className="relative flex-1">
-                    <TagIcon className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="text"
-                      value={customTagInput}
-                      onChange={(e) => setCustomTagInput(e.target.value)}
-                      onKeyDown={handleAddCustomTag}
-                      placeholder="Ajouter un tag personnalisé (Appuyez sur Entrée)..."
-                      className="w-full pl-8 pr-3 py-2 rounded-xl bg-gray-50 dark:bg-[#1a2033] border border-gray-200 dark:border-[#27304b] text-xs text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleAddCustomTag}
-                    className="px-3 py-2 rounded-xl bg-gray-200 dark:bg-[#20273f] hover:bg-blue-600 hover:text-white text-gray-700 dark:text-gray-300 text-xs font-bold transition-colors cursor-pointer"
-                  >
-                    + Ajouter
-                  </button>
-                </div>
-
-                {/* Selected Tags Chips Display */}
-                {tagsList.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {tagsList.map((tag) => (
-                      <span
-                        key={tag}
-                        className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-semibold"
-                      >
-                        <span>#{tag}</span>
+                    {/* Media Type (Col 3) */}
+                    <div className="sm:col-span-3">
+                      <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-400 mb-1">
+                        Type
+                      </label>
+                      <div className="flex items-center p-0.5 rounded-lg bg-gray-100 dark:bg-[#1a2033] border border-gray-200 dark:border-[#2b3550]">
                         <button
                           type="button"
-                          onClick={() => toggleTagInForm(tag)}
-                          className="hover:text-rose-500 ml-1 font-bold"
+                          onClick={() => setTagMediaType('photo')}
+                          className={`flex-1 py-1 rounded text-[11px] font-bold transition-all cursor-pointer ${
+                            tagMediaType === 'photo'
+                              ? 'bg-white dark:bg-blue-600 text-blue-600 dark:text-white shadow-2xs'
+                              : 'text-gray-600 dark:text-gray-400'
+                          }`}
                         >
-                          ×
+                          📸 Photo
                         </button>
-                      </span>
-                    ))}
+                        <button
+                          type="button"
+                          onClick={() => setTagMediaType('video')}
+                          className={`flex-1 py-1 rounded text-[11px] font-bold transition-all cursor-pointer ${
+                            tagMediaType === 'video'
+                              ? 'bg-white dark:bg-purple-600 text-purple-600 dark:text-white shadow-2xs'
+                              : 'text-gray-600 dark:text-gray-400'
+                          }`}
+                        >
+                          🎬 Vidéo
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Tag Price (Col 3) */}
+                    <div className="sm:col-span-3">
+                      <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-400 mb-1">
+                        Prix PPV ($)
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-amber-500 font-bold text-xs">$</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="1"
+                          value={tagPrice}
+                          onChange={(e) => setTagPrice(e.target.value)}
+                          placeholder="15.00"
+                          className="w-full pl-6 pr-2.5 py-1.5 rounded-lg bg-gray-50 dark:bg-[#1a2033] border border-gray-200 dark:border-[#2b3550] text-xs text-gray-900 dark:text-white font-mono-numbers font-bold outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Add Tag Button (Col 2) */}
+                    <div className="sm:col-span-2 flex items-end">
+                      <button
+                        type="button"
+                        onClick={handleAddMediaTagToScript}
+                        className="w-full py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs active:scale-95 transition-all flex items-center justify-center space-x-1 cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Ajouter</span>
+                      </button>
+                    </div>
                   </div>
-                )}
+
+                  {/* Media URL Input */}
+                  <div>
+                    <input
+                      type="text"
+                      value={tagUrl}
+                      onChange={(e) => setTagUrl(e.target.value)}
+                      placeholder="Collez l'URL de la photo ou vidéo (ou cliquez sur un preset ci-dessus)..."
+                      className="w-full px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-[#1a2033] border border-gray-200 dark:border-[#2b3550] text-xs text-gray-900 dark:text-white font-mono outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Text Area with dynamic tag chips */}
@@ -729,7 +734,7 @@ export const ScriptsModal: React.FC<ScriptsModalProps> = ({
                   className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-black shadow-lg shadow-blue-500/25 active:scale-95 transition-all flex items-center space-x-2 cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
-                  <span>Enregistrer le Script dans la Bibliothèque</span>
+                  <span>Enregistrer le Script avec ses Tags & Prix</span>
                 </button>
               </div>
             </form>
@@ -746,7 +751,7 @@ export const ScriptsModal: React.FC<ScriptsModalProps> = ({
                     type="text"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Rechercher par mot-clé ou tag (douche, lingerie, whale, custom, kinky)..."
+                    placeholder="Rechercher par mot-clé ou tag (#douche, #lingerie, #kinky)..."
                     className="w-full pl-9 pr-4 py-2.5 text-xs rounded-xl bg-white dark:bg-[#10131f] border border-gray-200 dark:border-[#28314e] text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
                   />
                 </div>
@@ -791,32 +796,32 @@ export const ScriptsModal: React.FC<ScriptsModalProps> = ({
                   <span>Tags :</span>
                 </span>
 
-                {selectedTag && (
+                {selectedMediaTagFilter && (
                   <button
-                    onClick={() => setSelectedTag(null)}
+                    onClick={() => setSelectedMediaTagFilter(null)}
                     className="px-2 py-0.5 rounded-md bg-rose-500 text-white text-[10px] font-bold cursor-pointer flex items-center space-x-1 flex-shrink-0"
                   >
-                    <span>#{selectedTag}</span>
+                    <span>#{selectedMediaTagFilter}</span>
                     <span>×</span>
                   </button>
                 )}
 
-                {POPULAR_TAGS.map((tag) => {
-                  const isSelected = selectedTag === tag;
+                {['douche_video', 'douche_photo', 'lingerie_pack', 'lingerie_video', 'kinky_clip', 'regard_sensuel', 'whale'].map((tName) => {
+                  const isSelected = selectedMediaTagFilter === tName;
                   return (
                     <button
-                      key={tag}
+                      key={tName}
                       onClick={() => {
-                        setSelectedTag(isSelected ? null : tag);
+                        setSelectedMediaTagFilter(isSelected ? null : tName);
                         sounds.playReceive();
                       }}
-                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer flex-shrink-0 ${
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold font-mono transition-all cursor-pointer flex-shrink-0 ${
                         isSelected
                           ? 'bg-blue-600 text-white shadow-xs'
                           : 'bg-gray-100 dark:bg-[#1f263c] text-gray-600 dark:text-gray-400 hover:text-blue-500'
                       }`}
                     >
-                      #{tag}
+                      #{tName}
                     </button>
                   );
                 })}
@@ -824,7 +829,7 @@ export const ScriptsModal: React.FC<ScriptsModalProps> = ({
             </div>
 
             {/* Script Cards List */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
               {filtered.length > 0 ? (
                 filtered.map((script) => (
                   <div
@@ -839,29 +844,9 @@ export const ScriptsModal: React.FC<ScriptsModalProps> = ({
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400">
                           {script.category}
                         </span>
-
-                        {/* Media Attachment Badge */}
-                        {script.media && (
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black flex items-center space-x-1 ${
-                            script.media.type === 'video'
-                              ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400'
-                              : 'bg-pink-500/15 text-pink-600 dark:text-pink-400'
-                          }`}>
-                            {script.media.type === 'video' ? <VideoIcon className="w-3 h-3" /> : <ImageIcon className="w-3 h-3" />}
-                            <span>{script.media.type === 'video' ? 'Vidéo' : 'Photo'}</span>
-                            {script.media.isLocked && <Lock className="w-2.5 h-2.5 text-amber-500 ml-0.5" />}
-                          </span>
-                        )}
                       </div>
 
                       <div className="flex items-center space-x-2">
-                        {script.price && (
-                          <span className="flex items-center text-xs font-bold font-mono-numbers text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-md">
-                            <DollarSign className="w-3 h-3" />
-                            {script.price.toFixed(2)}
-                          </span>
-                        )}
-
                         {onDeleteScript && script.id.startsWith('s-') && (
                           <button
                             onClick={() => {
@@ -879,66 +864,80 @@ export const ScriptsModal: React.FC<ScriptsModalProps> = ({
                       </div>
                     </div>
 
-                    {/* Script Body with optional Media Attachment Thumbnail */}
-                    <div className="flex flex-col sm:flex-row items-start gap-3 my-2.5">
-                      {script.media && (
-                        <div 
-                          onClick={() => {
-                            if (onOpenLightbox && script.media?.url) {
-                              onOpenLightbox(script.media.url, script.title, script.media.price);
-                            }
-                          }}
-                          className="relative w-20 h-20 rounded-xl overflow-hidden bg-black/80 flex-shrink-0 cursor-pointer group/media border border-gray-200 dark:border-white/10"
-                        >
-                          <img
-                            src={script.media.url}
-                            alt={script.title}
-                            className={`w-full h-full object-cover transition-transform group-hover/media:scale-105 ${
-                              script.media.isLocked ? 'blur-xs opacity-75' : ''
-                            }`}
-                          />
-                          <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                            {script.media.type === 'video' ? (
-                              <div className="w-7 h-7 rounded-full bg-black/60 backdrop-blur-xs flex items-center justify-center text-white">
-                                <Play className="w-3.5 h-3.5 fill-white ml-0.5" />
+                    {/* Script Body Text */}
+                    <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed my-2 select-text font-normal">
+                      {script.text}
+                    </p>
+
+                    {/* SECTION DES TAGS QUI ONT DES PHOTOS, VIDÉOS AVEC LEURS PRIX */}
+                    {script.mediaTags && script.mediaTags.length > 0 && (
+                      <div className="my-3 p-2.5 rounded-xl bg-gray-50/80 dark:bg-[#131726] border border-gray-200/60 dark:border-[#20273d] space-y-1.5">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                          Tags Médias & Prix PPV attachés :
+                        </span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {script.mediaTags.map((mt) => (
+                            <div
+                              key={mt.id}
+                              onClick={() => handleApply(script, mt)}
+                              title={`Cliquer pour envoyer ce script avec le média #${mt.name}`}
+                              className="flex items-center justify-between p-2 rounded-lg bg-white dark:bg-[#1a2033] border border-gray-200 dark:border-[#27324e] hover:border-pink-500 dark:hover:border-pink-500 transition-all cursor-pointer group/tag shadow-2xs hover:scale-101"
+                            >
+                              <div className="flex items-center space-x-2 min-w-0">
+                                <div 
+                                  onClick={(e) => {
+                                    if (onOpenLightbox) {
+                                      e.stopPropagation();
+                                      onOpenLightbox(mt.url, mt.title || mt.name, mt.price);
+                                    }
+                                  }}
+                                  title="Agrandir ce média"
+                                  className="relative w-8 h-8 rounded-md overflow-hidden bg-black flex-shrink-0 cursor-zoom-in"
+                                >
+                                  <img
+                                    src={mt.url}
+                                    alt={mt.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center text-white">
+                                    {mt.type === 'video' ? (
+                                      <Play className="w-2.5 h-2.5 fill-white" />
+                                    ) : (
+                                      <ImageIcon className="w-2.5 h-2.5" />
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div className="min-w-0">
+                                  <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400 block truncate group-hover/tag:text-pink-500">
+                                    #{mt.name}
+                                  </span>
+                                  <span className="text-[10px] text-gray-500 dark:text-gray-400 block truncate">
+                                    {mt.title || (mt.type === 'video' ? 'Vidéo' : 'Photo')}
+                                  </span>
+                                </div>
                               </div>
-                            ) : (
-                              <div className="w-7 h-7 rounded-full bg-black/60 backdrop-blur-xs flex items-center justify-center text-white opacity-0 group-hover/media:opacity-100 transition-opacity">
-                                <Eye className="w-3.5 h-3.5 text-white" />
+
+                              <div className="flex items-center space-x-1 font-mono-numbers text-xs font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-md flex-shrink-0">
+                                <DollarSign className="w-3 h-3" />
+                                <span>{mt.price.toFixed(2)}</span>
                               </div>
-                            )}
-                          </div>
-                          {script.media.isLocked && (
-                            <span className="absolute bottom-1 right-1 px-1 py-0.2 rounded bg-black/70 text-amber-400 font-mono-numbers text-[9px] font-bold">
-                              ${script.media.price?.toFixed(2)}
-                            </span>
-                          )}
+                            </div>
+                          ))}
                         </div>
-                      )}
+                      </div>
+                    )}
 
-                      <p className="flex-1 text-xs text-gray-700 dark:text-gray-300 leading-relaxed select-text font-normal">
-                        {script.text}
-                      </p>
-                    </div>
-
-                    {/* Tags List */}
-                    <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-[#20273d]">
+                    {/* Footer Actions */}
+                    <div className="flex items-center justify-between pt-2.5 border-t border-gray-100 dark:border-[#20273d]">
                       <div className="flex items-center space-x-1.5 flex-wrap gap-1">
                         {script.tags.map((tag, idx) => (
-                          <button
+                          <span
                             key={idx}
-                            onClick={() => {
-                              setSelectedTag(selectedTag === tag ? null : tag);
-                              sounds.playReceive();
-                            }}
-                            className={`text-[10px] px-2 py-0.5 rounded font-mono transition-colors cursor-pointer ${
-                              selectedTag === tag
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400'
-                            }`}
+                            className="text-[10px] px-2 py-0.5 rounded font-mono bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400"
                           >
                             #{tag}
-                          </button>
+                          </span>
                         ))}
                       </div>
 
@@ -947,7 +946,7 @@ export const ScriptsModal: React.FC<ScriptsModalProps> = ({
                           type="button"
                           onClick={() => handleCopyText(script.text, script.id)}
                           className="flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-[#20273f] dark:hover:bg-[#2a3454] text-gray-700 dark:text-gray-300 text-xs font-bold transition-all cursor-pointer"
-                          title="Copier le texte dans le presse-papiers"
+                          title="Copier le texte"
                         >
                           <Copy className="w-3 h-3" />
                           <span>Copier</span>
@@ -955,13 +954,13 @@ export const ScriptsModal: React.FC<ScriptsModalProps> = ({
 
                         <button
                           type="button"
-                          onClick={() => handleInsert(script)}
+                          onClick={() => handleApply(script)}
                           className="flex items-center space-x-1 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
                         >
                           {copiedId === script.id ? (
                             <>
                               <Check className="w-3.5 h-3.5 text-emerald-300" />
-                              <span>Inséré !</span>
+                              <span>Appliqué !</span>
                             </>
                           ) : (
                             <>
@@ -977,12 +976,12 @@ export const ScriptsModal: React.FC<ScriptsModalProps> = ({
               ) : (
                 <div className="text-center py-12 text-xs text-gray-400 space-y-3">
                   <Flame className="w-8 h-8 text-gray-400 mx-auto opacity-40" />
-                  <p>Aucun script correspondant à votre recherche ou au filtre tag.</p>
+                  <p>Aucun script correspondant à votre recherche ou filtre.</p>
                   <button
                     onClick={() => {
                       setSearch('');
                       setSelectedCategory('All');
-                      setSelectedTag(null);
+                      setSelectedMediaTagFilter(null);
                       setViewMode('create');
                     }}
                     className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-xl bg-blue-600 text-white font-bold text-xs"

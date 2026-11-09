@@ -25,7 +25,7 @@ import {
   INITIAL_CREATOR_MESSAGES,
   CANNED_SCRIPTS
 } from './data/mockData';
-import type { Fan, ChatMessage, CannedScript, ToastMessage, CreatorAccount, FanUser } from './types/crm';
+import type { Fan, ChatMessage, CannedScript, ScriptMediaTag, ToastMessage, CreatorAccount, FanUser } from './types/crm';
 import { FanPortal } from './components/fan/FanPortal';
 import { FanLoginPage } from './components/fan/FanLoginPage';
 
@@ -177,10 +177,9 @@ function DashboardApp() {
     try {
       const saved = localStorage.getItem('cactus_scripts');
       if (saved) return JSON.parse(saved);
-    } catch {}
+    } catch { }
     return CANNED_SCRIPTS;
   });
-  const [scriptsModalMode, setScriptsModalMode] = useState<'list' | 'create'>('list');
 
   const handleAddScript = (newScript: Omit<CannedScript, 'id'>) => {
     const scriptWithId: CannedScript = {
@@ -191,7 +190,7 @@ function DashboardApp() {
       const updated = [scriptWithId, ...prev];
       try {
         localStorage.setItem('cactus_scripts', JSON.stringify(updated));
-      } catch {}
+      } catch { }
       return updated;
     });
     addToast({
@@ -206,7 +205,7 @@ function DashboardApp() {
       const updated = prev.filter((s) => s.id !== scriptId);
       try {
         localStorage.setItem('cactus_scripts', JSON.stringify(updated));
-      } catch {}
+      } catch { }
       return updated;
     });
     addToast({
@@ -580,9 +579,26 @@ function DashboardApp() {
     );
   };
 
-  // Apply script from modal
-  const handleApplyScript = (script: CannedScript) => {
-    handleSendMessage(script.text, script.media);
+  // Apply script from modal (supports selecting a specific media tag with its photo/video and price)
+  const handleApplyScript = (script: CannedScript, selectedTag?: ScriptMediaTag) => {
+    if (selectedTag) {
+      handleSendMessage(script.text, {
+        type: selectedTag.type === 'video' ? 'video' : 'image',
+        url: selectedTag.url,
+        price: selectedTag.price,
+      });
+    } else if (script.media) {
+      handleSendMessage(script.text, script.media);
+    } else if (script.mediaTags && script.mediaTags.length > 0) {
+      const firstTag = script.mediaTags[0];
+      handleSendMessage(script.text, {
+        type: firstTag.type === 'video' ? 'video' : 'image',
+        url: firstTag.url,
+        price: firstTag.price,
+      });
+    } else {
+      handleSendMessage(script.text);
+    }
   };
 
   // Send PPV from modal
@@ -1034,11 +1050,9 @@ function DashboardApp() {
           darkMode={darkMode}
           onToggleDarkMode={() => setDarkMode(!darkMode)}
           onOpenVault={() => setIsVaultOpen(true)}
-          onOpenScripts={(mode) => {
-            setScriptsModalMode(mode || 'list');
-            setIsScriptsOpen(true);
-          }}
           scripts={scripts}
+          onAddScript={handleAddScript}
+          onDeleteScript={handleDeleteScript}
           onOpenBroadcast={() => setIsBroadcastOpen(true)}
           onOpenSettings={() => setIsSettingsOpen(true)}
         />
@@ -1163,7 +1177,7 @@ function DashboardApp() {
         scripts={scripts}
         onAddScript={handleAddScript}
         onDeleteScript={handleDeleteScript}
-        initialMode={scriptsModalMode}
+        initialMode="list"
         onOpenLightbox={(url, title, price) => setLightboxData({ isOpen: true, url, title, price })}
       />
 

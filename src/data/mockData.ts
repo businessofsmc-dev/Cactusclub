@@ -396,6 +396,24 @@ export const CANNED_SCRIPTS: CannedScript[] = [
     text: "Je viens de sortir de la douche, l'eau était tellement chaude... J'ai filmé un petit extrait rien que pour tes yeux si tu veux voir ? 🙈💦",
     price: 15,
     tags: ['douche', 'tease', 'video'],
+    mediaTags: [
+      {
+        id: 'mt-shower-vid',
+        name: 'douche_video',
+        type: 'video',
+        url: 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?auto=format&fit=crop&w=800&q=80',
+        price: 15,
+        title: 'Extrait Douche 4K (45s)',
+      },
+      {
+        id: 'mt-shower-photo',
+        name: 'douche_photo',
+        type: 'photo',
+        url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80',
+        price: 10,
+        title: 'Selfie Miroir Buée',
+      },
+    ],
     media: {
       type: 'video',
       url: 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?auto=format&fit=crop&w=800&q=80',
@@ -409,6 +427,24 @@ export const CANNED_SCRIPTS: CannedScript[] = [
     title: '🔥 Relance Coquine Privée',
     text: "Dis-moi, tu préfères quand je suis toute sage et innocente ou quand je me lâche complètement avec toi ce soir ? 😏",
     tags: ['kinky', 'relance', 'engagement'],
+    mediaTags: [
+      {
+        id: 'mt-kinky-photo',
+        name: 'regard_sensuel',
+        type: 'photo',
+        url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
+        price: 12,
+        title: 'Photo Regard Braise',
+      },
+      {
+        id: 'mt-kinky-clip',
+        name: 'kinky_clip',
+        type: 'video',
+        url: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=800&q=80',
+        price: 20,
+        title: 'Clip Teasing Soirée',
+      },
+    ],
     media: {
       type: 'image',
       url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
@@ -422,6 +458,24 @@ export const CANNED_SCRIPTS: CannedScript[] = [
     text: "J'ai reçu ce nouvel ensemble de lingerie en dentelle noire que tu aimais... J'ai pris 5 photos ultra détaillées sous la lumière du soleil. Tu veux débloquer le pack secret ? 🖤",
     price: 25,
     tags: ['photos', 'lingerie', 'pack'],
+    mediaTags: [
+      {
+        id: 'mt-lingerie-pack',
+        name: 'lingerie_pack',
+        type: 'photo',
+        url: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=800&q=80',
+        price: 25,
+        title: 'Pack 5 Photos Dentelle',
+      },
+      {
+        id: 'mt-lingerie-vid',
+        name: 'lingerie_video',
+        type: 'video',
+        url: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80',
+        price: 35,
+        title: 'Vidéo Essayage Privé (2min)',
+      },
+    ],
     media: {
       type: 'image',
       url: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=800&q=80',

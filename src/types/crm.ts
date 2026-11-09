@@ -105,6 +105,15 @@ export interface CreatorAccount {
   rating?: number;
 }
 
+export interface ScriptMediaTag {
+  id: string;
+  name: string; // e.g. "douche", "lingerie", "pack_vip"
+  type: 'photo' | 'video';
+  url: string;
+  price: number; // Prix en dollars, ex: 15
+  title?: string; // Libellé descriptif
+}
+
 export interface CannedScript {
   id: string;
   category: 'Greeting' | 'PPV Tease' | 'Upsell' | 'Follow-up' | 'Re-engage' | 'Kinky';
@@ -112,6 +121,7 @@ export interface CannedScript {
   text: string;
   price?: number;
   tags: string[];
+  mediaTags?: ScriptMediaTag[]; // Tags qui ont des photos, vidéos avec les prix
   media?: {
     type: 'image' | 'video';
     url: string;
