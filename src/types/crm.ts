@@ -112,6 +112,12 @@ export interface CannedScript {
   text: string;
   price?: number;
   tags: string[];
+  media?: {
+    type: 'image' | 'video';
+    url: string;
+    isLocked?: boolean;
+    price?: number;
+  };
 }
 
 export interface ToastMessage {

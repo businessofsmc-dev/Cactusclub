@@ -396,6 +396,12 @@ export const CANNED_SCRIPTS: CannedScript[] = [
     text: "Je viens de sortir de la douche, l'eau était tellement chaude... J'ai filmé un petit extrait rien que pour tes yeux si tu veux voir ? 🙈💦",
     price: 15,
     tags: ['douche', 'tease', 'video'],
+    media: {
+      type: 'video',
+      url: 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?auto=format&fit=crop&w=800&q=80',
+      isLocked: true,
+      price: 15,
+    },
   },
   {
     id: 's-kinky-rebound',
@@ -403,6 +409,11 @@ export const CANNED_SCRIPTS: CannedScript[] = [
     title: '🔥 Relance Coquine Privée',
     text: "Dis-moi, tu préfères quand je suis toute sage et innocente ou quand je me lâche complètement avec toi ce soir ? 😏",
     tags: ['kinky', 'relance', 'engagement'],
+    media: {
+      type: 'image',
+      url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
+      isLocked: false,
+    },
   },
   {
     id: 's-upsell-photo',
@@ -411,6 +422,12 @@ export const CANNED_SCRIPTS: CannedScript[] = [
     text: "J'ai reçu ce nouvel ensemble de lingerie en dentelle noire que tu aimais... J'ai pris 5 photos ultra détaillées sous la lumière du soleil. Tu veux débloquer le pack secret ? 🖤",
     price: 25,
     tags: ['photos', 'lingerie', 'pack'],
+    media: {
+      type: 'image',
+      url: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=800&q=80',
+      isLocked: true,
+      price: 25,
+    },
   },
   {
     id: 's-tip-prompt',

@@ -22,7 +22,8 @@ import {
   INITIAL_MESSAGES_VALENTIN,
   CHATTER_TEAM,
   INITIAL_FAN_USER,
-  INITIAL_CREATOR_MESSAGES
+  INITIAL_CREATOR_MESSAGES,
+  CANNED_SCRIPTS
 } from './data/mockData';
 import type { Fan, ChatMessage, CannedScript, ToastMessage, CreatorAccount, FanUser } from './types/crm';
 import { FanPortal } from './components/fan/FanPortal';
@@ -170,6 +171,50 @@ function DashboardApp() {
 
   // Fan Portal direct conversations per creator
   const [fanMessagesMap, setFanMessagesMap] = useState<Record<string, ChatMessage[]>>(INITIAL_CREATOR_MESSAGES);
+
+  // Dynamic Canned Scripts & Agency Cues with localStorage persistence
+  const [scripts, setScripts] = useState<CannedScript[]>(() => {
+    try {
+      const saved = localStorage.getItem('cactus_scripts');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return CANNED_SCRIPTS;
+  });
+  const [scriptsModalMode, setScriptsModalMode] = useState<'list' | 'create'>('list');
+
+  const handleAddScript = (newScript: Omit<CannedScript, 'id'>) => {
+    const scriptWithId: CannedScript = {
+      ...newScript,
+      id: `s-custom-${Date.now()}`,
+    };
+    setScripts((prev) => {
+      const updated = [scriptWithId, ...prev];
+      try {
+        localStorage.setItem('cactus_scripts', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+    addToast({
+      type: 'success',
+      title: 'Script de Vente Créé',
+      description: `"${newScript.title}" est maintenant disponible avec ses tags et médias.`,
+    });
+  };
+
+  const handleDeleteScript = (scriptId: string) => {
+    setScripts((prev) => {
+      const updated = prev.filter((s) => s.id !== scriptId);
+      try {
+        localStorage.setItem('cactus_scripts', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+    addToast({
+      type: 'info',
+      title: 'Script Supprimé',
+      description: 'Le script a été retiré de la bibliothèque.',
+    });
+  };
 
   // Modals state
   const [isScriptsOpen, setIsScriptsOpen] = useState(false);
@@ -537,7 +582,7 @@ function DashboardApp() {
 
   // Apply script from modal
   const handleApplyScript = (script: CannedScript) => {
-    handleSendMessage(script.text);
+    handleSendMessage(script.text, script.media);
   };
 
   // Send PPV from modal
@@ -989,7 +1034,11 @@ function DashboardApp() {
           darkMode={darkMode}
           onToggleDarkMode={() => setDarkMode(!darkMode)}
           onOpenVault={() => setIsVaultOpen(true)}
-          onOpenScripts={() => setIsScriptsOpen(true)}
+          onOpenScripts={(mode) => {
+            setScriptsModalMode(mode || 'list');
+            setIsScriptsOpen(true);
+          }}
+          scripts={scripts}
           onOpenBroadcast={() => setIsBroadcastOpen(true)}
           onOpenSettings={() => setIsSettingsOpen(true)}
         />
@@ -1057,6 +1106,7 @@ function DashboardApp() {
               onToggleStarFan={handleToggleStarFan}
               onSimulateUnlock={handleSimulateUnlock}
               onUpdateNickname={handleUpdateNickname}
+              scripts={scripts}
             />
 
             {/* Right: Fan Insights & Deep Agency CRM */}
@@ -1110,6 +1160,11 @@ function DashboardApp() {
         isOpen={isScriptsOpen}
         onClose={() => setIsScriptsOpen(false)}
         onApplyScript={handleApplyScript}
+        scripts={scripts}
+        onAddScript={handleAddScript}
+        onDeleteScript={handleDeleteScript}
+        initialMode={scriptsModalMode}
+        onOpenLightbox={(url, title, price) => setLightboxData({ isOpen: true, url, title, price })}
       />
 
       <PPVModal

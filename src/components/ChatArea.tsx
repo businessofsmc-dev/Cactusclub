@@ -48,6 +48,7 @@ interface ChatAreaProps {
   onToggleStarFan?: () => void;
   onSimulateUnlock?: (msgId: string, price: number) => void;
   onUpdateNickname?: (newName: string) => void;
+  scripts?: CannedScript[];
 }
 
 export const ChatArea: React.FC<ChatAreaProps> = ({
@@ -65,6 +66,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
   onToggleStarFan,
   onSimulateUnlock,
   onUpdateNickname,
+  scripts = CANNED_SCRIPTS,
 }) => {
   const { t } = useLanguage();
   const [inputText, setInputText] = useState('');
@@ -109,7 +111,8 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
     }
   };
 
-  const matchingScripts = CANNED_SCRIPTS.filter((s) =>
+  const allScripts = scripts && scripts.length > 0 ? scripts : CANNED_SCRIPTS;
+  const matchingScripts = allScripts.filter((s) =>
     s.title.toLowerCase().includes(slashFilter) ||
     s.text.toLowerCase().includes(slashFilter) ||
     s.tags.some((t) => t.toLowerCase().includes(slashFilter))
@@ -159,12 +162,18 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
     }
   };
 
-  // Insert canned script
+  // Insert canned script (with attached media if any)
   const handleSelectScript = (script: CannedScript) => {
-    setInputText(script.text);
-    setShowSlashMenu(false);
-    if (textareaRef.current) {
-      textareaRef.current.focus();
+    if (script.media) {
+      onSendMessage(script.text, script.media);
+      setInputText('');
+      setShowSlashMenu(false);
+    } else {
+      setInputText(script.text);
+      setShowSlashMenu(false);
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+      }
     }
   };
 
