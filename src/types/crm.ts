@@ -91,6 +91,13 @@ export interface CreatorAccount {
   unreadCount: number;
   onlineFansCount: number;
   notificationsCount: number;
+  coverUrl?: string;
+  bio?: string;
+  category?: string;
+  isOnline?: boolean;
+  subscribersCount?: string;
+  responseSpeed?: string;
+  rating?: number;
 }
 
 export interface CannedScript {
@@ -118,7 +125,7 @@ export interface FanUser {
   avatar: string;
   walletBalance: number;
   isSubscribed: boolean;
-  subscriptionTier?: 'monthly' | 'quarterly' | 'vip';
+  subscriptionTier?: 'free' | 'monthly' | 'quarterly' | 'vip';
   unlockedMediaIds: string[];
 }
 

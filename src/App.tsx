@@ -21,7 +21,8 @@ import {
   INITIAL_FANS, 
   INITIAL_MESSAGES_VALENTIN, 
   CHATTER_TEAM,
-  INITIAL_FAN_USER 
+  INITIAL_FAN_USER,
+  INITIAL_CREATOR_MESSAGES 
 } from './data/mockData';
 import type { Fan, ChatMessage, CannedScript, ToastMessage, CreatorAccount, FanUser } from './types/crm';
 import { FanPortal } from './components/fan/FanPortal';
@@ -166,6 +167,9 @@ function DashboardApp() {
       },
     ],
   });
+
+  // Fan Portal direct conversations per creator
+  const [fanMessagesMap, setFanMessagesMap] = useState<Record<string, ChatMessage[]>>(INITIAL_CREATOR_MESSAGES);
 
   // Modals state
   const [isScriptsOpen, setIsScriptsOpen] = useState(false);
@@ -574,7 +578,7 @@ function DashboardApp() {
   // FAN / VISITOR PORTAL ACTION HANDLERS
   // ==========================================
 
-  // Fan sends a private message to Margot
+  // Fan sends a private message to the active creator
   const handleSendMessageFromFan = (text: string) => {
     const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).toLowerCase();
     const fanMsg: ChatMessage = {
@@ -586,56 +590,17 @@ function DashboardApp() {
 
     sounds.playSend();
 
-    setMessagesMap((prev) => ({
+    const creatorId = activeAccountId;
+    setFanMessagesMap((prev) => ({
       ...prev,
-      valentin: [...(prev.valentin || []), fanMsg],
+      [creatorId]: [...(prev[creatorId] || []), fanMsg],
     }));
 
-    // Update Valentin in fans CRM list
-    setFans((prev) =>
-      prev.map((f) =>
-        f.id === 'valentin'
-          ? {
-              ...f,
-              lastMessageSnippet: text,
-              lastMessageTime: timeStr,
-              unreadCount: (f.unreadCount || 0) + 1,
-            }
-          : f
-      )
-    );
-
-    addToast({
-      type: 'info',
-      title: `Nouveau message de ${fanUser.name || 'Valentin'}`,
-      description: text.length > 50 ? `${text.slice(0, 50)}...` : text,
-    });
-
-    // Simulated warm automated response from Margot after 2.2s
-    setTimeout(() => {
-      const creatorReplies = [
-        'Coucou mon Valentin ! Tu me fais tellement plaisir ❤️ Tu as passé une bonne journée ?',
-        'Merci pour ton message bébé 🥰 Regarde vite dans tes messages si tu as vu mon nouveau shooting !',
-        'Toujours là pour toi ! Tu veux que je te prépare une petite surprise en privé ? ✨',
-        'Coucou toi ! J\'étais justement en train de penser à toi 🙈',
-      ];
-      const reply = creatorReplies[Math.floor(Math.random() * creatorReplies.length)];
-      const replyTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).toLowerCase();
-
-      const creatorMsg: ChatMessage = {
-        id: `reply-${Date.now()}`,
-        sender: 'creator',
-        chatterName: activeChatter,
-        text: reply,
-        timestamp: replyTime,
-        status: 'delivered',
-      };
-
-      sounds.playReceive();
-
+    // If active creator is Margot, also sync with CRM Valentin inbox
+    if (creatorId === 'margot') {
       setMessagesMap((prev) => ({
         ...prev,
-        valentin: [...(prev.valentin || []), creatorMsg],
+        valentin: [...(prev.valentin || []), fanMsg],
       }));
 
       setFans((prev) =>
@@ -643,13 +608,91 @@ function DashboardApp() {
           f.id === 'valentin'
             ? {
                 ...f,
-                lastMessageSnippet: reply,
-                lastMessageTime: replyTime,
+                lastMessageSnippet: text,
+                lastMessageTime: timeStr,
+                unreadCount: (f.unreadCount || 0) + 1,
               }
             : f
         )
       );
-    }, 2200);
+    }
+
+    addToast({
+      type: 'info',
+      title: `Message envoyé à ${currentAccount.name}`,
+      description: text.length > 50 ? `${text.slice(0, 50)}...` : text,
+    });
+
+    // Simulated warm automated response from the specific creator after 1.8s
+    setTimeout(() => {
+      const creatorRepliesMap: Record<string, string[]> = {
+        margot: [
+          'Coucou mon Valentin ! Tu me fais tellement plaisir ❤️ Tu as passé une bonne journée ?',
+          'Merci pour ton message bébé 🥰 Regarde vite dans mes publications si tu as vu mon nouveau shooting !',
+          'Toujours là pour toi ! Tu veux que je te prépare une petite surprise en privé ? ✨',
+          'Coucou toi ! J\'étais justement en train de penser à toi 🙈',
+        ],
+        shasha: [
+          'Hello toi ! ✨ Je viens de sortir de scène, l\'adrénaline est encore au max ! Tu as aimé ma vidéo ?',
+          'Merci pour ton message mon chéri 🥰 Je prépare une nouvelle chorégraphie ultra sensuelle pour toi !',
+          'Coucou ! Tu es adorable... Tu veux que je te montre ma tenue de répétition en direct ? 💃',
+        ],
+        clara: [
+          'Coucou... 💋 Tu tombes bien, j\'avais justement besoin d\'une petite pause dans mes révisions !',
+          'Tu me fais toujours sourire quand tu m\'écris 🥰 Tu fais quoi ce soir ?',
+          'Merci mon cœur ! Je vais bientôt t\'envoyer un petit mémo vocal pour te souhaiter une bonne nuit 🌙✨',
+        ],
+        elena: [
+          'Salut champion ! 💪 Je viens de boire mon shake de récup. Tu as fait ta séance aujourd\'hui ?',
+          'Haha merci ! Rien de tel qu\'un bon message pour garder la motivation au sommet 🔥 Tu veux un conseil training ?',
+          'Toujours là pour mes VIPs les plus fidèles ! Prépare-toi, nouveau teaser fitness bientôt en ligne 🏋️‍♀️',
+        ],
+        'margot-vip': [
+          'Bienvenue dans mon cercle privé ultra-confidentiel 👑 Que désires-tu pour ce soir ?',
+          'Chaque mot de ta part est lu en priorité absolue dans mon salon privé ✨ Merci pour ta fidélité platine.',
+          'J\'adore ta délicatesse... Je te prépare une vidéo exclusive non censurée rien que pour tes yeux 🥂',
+        ],
+      };
+
+      const replies = creatorRepliesMap[creatorId] || creatorRepliesMap.margot;
+      const reply = replies[Math.floor(Math.random() * replies.length)];
+      const replyTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).toLowerCase();
+
+      const creatorMsg: ChatMessage = {
+        id: `reply-${Date.now()}`,
+        sender: 'creator',
+        chatterName: currentAccount.name.split(' ')[0],
+        text: reply,
+        timestamp: replyTime,
+        status: 'delivered',
+      };
+
+      sounds.playReceive();
+
+      setFanMessagesMap((prev) => ({
+        ...prev,
+        [creatorId]: [...(prev[creatorId] || []), creatorMsg],
+      }));
+
+      if (creatorId === 'margot') {
+        setMessagesMap((prev) => ({
+          ...prev,
+          valentin: [...(prev.valentin || []), creatorMsg],
+        }));
+
+        setFans((prev) =>
+          prev.map((f) =>
+            f.id === 'valentin'
+              ? {
+                  ...f,
+                  lastMessageSnippet: reply,
+                  lastMessageTime: replyTime,
+                }
+              : f
+          )
+        );
+      }
+    }, 1800);
   };
 
   // Fan unlocks PPV locked media
@@ -670,12 +713,13 @@ function DashboardApp() {
       unlockedMediaIds: [...prev.unlockedMediaIds, messageId],
     }));
 
-    // Unlock message in Valentin conversation
-    setMessagesMap((prev) => {
-      const fanMsgs = prev.valentin || [];
+    // Unlock message in fan conversations
+    const creatorId = activeAccountId;
+    setFanMessagesMap((prev) => {
+      const msgs = prev[creatorId] || [];
       return {
         ...prev,
-        valentin: fanMsgs.map((m) =>
+        [creatorId]: msgs.map((m) =>
           m.id === messageId
             ? {
                 ...m,
@@ -686,6 +730,25 @@ function DashboardApp() {
         ),
       };
     });
+
+    // Also unlock in Valentin CRM if Margot
+    if (creatorId === 'margot') {
+      setMessagesMap((prev) => {
+        const fanMsgs = prev.valentin || [];
+        return {
+          ...prev,
+          valentin: fanMsgs.map((m) =>
+            m.id === messageId
+              ? {
+                  ...m,
+                  isUnlockedPPV: true,
+                  media: m.media ? { ...m.media, isLocked: false } : undefined,
+                }
+              : m
+          ),
+        };
+      });
+    }
 
     // Update CRM fan spend & sales history
     setFans((prev) =>
@@ -807,12 +870,13 @@ function DashboardApp() {
     });
   };
 
-  // Fan subscribes to tier
-  const handleFanSubscribe = (tier: 'monthly' | 'quarterly' | 'vip', price: number) => {
+  // Fan subscribes to tier (Free or VIP)
+  const handleFanSubscribe = (tier: 'free' | 'monthly' | 'quarterly' | 'vip', price: number) => {
+    const isFree = tier === 'free';
     setFanUser((prev) => ({
       ...prev,
-      walletBalance: Math.max(0, prev.walletBalance - price),
-      isSubscribed: true,
+      walletBalance: isFree ? prev.walletBalance : Math.max(0, prev.walletBalance - price),
+      isSubscribed: !isFree,
       subscriptionTier: tier,
     }));
 
@@ -820,46 +884,66 @@ function DashboardApp() {
     const subMsg: ChatMessage = {
       id: `sub-${Date.now()}`,
       sender: 'fan',
-      text: `👑 Valentin a activé son abonnement VIP (${tier.toUpperCase()}) pour $${price.toFixed(2)} !`,
+      text: isFree
+        ? `🎁 Valentin a activé son Plan Découverte Gratuit pour discuter avec ${currentAccount.name} !`
+        : `👑 Valentin a activé son abonnement VIP (${tier.toUpperCase()}) pour $${price.toFixed(2)} !`,
       timestamp: timeStr,
     };
 
-    setMessagesMap((prev) => ({
+    const creatorId = activeAccountId;
+    setFanMessagesMap((prev) => ({
       ...prev,
-      valentin: [...(prev.valentin || []), subMsg],
+      [creatorId]: [...(prev[creatorId] || []), subMsg],
     }));
 
-    setFans((prev) =>
-      prev.map((f) => {
-        if (f.id === 'valentin') {
-          const newTotal = f.totalSpend + price;
-          return {
-            ...f,
-            totalSpend: newTotal,
-            isPriority: true,
-            salesHistory: [
-              {
-                id: `sub-sale-${Date.now()}`,
-                date: 'À l’instant',
-                title: `Abonnement Club (${tier})`,
-                type: 'Sub',
-                amount: price,
-                status: 'Unlocked',
-              },
-              ...f.salesHistory,
-            ],
-          };
-        }
-        return f;
-      })
-    );
+    if (creatorId === 'margot') {
+      setMessagesMap((prev) => ({
+        ...prev,
+        valentin: [...(prev.valentin || []), subMsg],
+      }));
+
+      if (!isFree) {
+        setFans((prev) =>
+          prev.map((f) => {
+            if (f.id === 'valentin') {
+              const newTotal = f.totalSpend + price;
+              return {
+                ...f,
+                totalSpend: newTotal,
+                isPriority: true,
+                salesHistory: [
+                  {
+                    id: `sub-sale-${Date.now()}`,
+                    date: 'À l’instant',
+                    title: `Abonnement Club (${tier})`,
+                    type: 'Sub',
+                    amount: price,
+                    status: 'Unlocked',
+                  },
+                  ...f.salesHistory,
+                ],
+              };
+            }
+            return f;
+          })
+        );
+      }
+    }
 
     sounds.playCash();
-    addToast({
-      type: 'success',
-      title: 'Abonnement Confirmé !',
-      description: `Bienvenue dans le cercle VIP de Margot (${tier}) !`,
-    });
+    if (isFree) {
+      addToast({
+        type: 'success',
+        title: 'Plan Gratuit Activé !',
+        description: `Bienvenue ! Vous pouvez maintenant échanger vos premiers messages avec ${currentAccount.name}.`,
+      });
+    } else {
+      addToast({
+        type: 'success',
+        title: 'Abonnement VIP Confirmé !',
+        description: `Bienvenue dans le cercle VIP de ${currentAccount.name} (${tier}) !`,
+      });
+    }
   };
 
   // Fan recharges wallet balance
@@ -989,8 +1073,11 @@ function DashboardApp() {
         /* VIEW 3: FAN / CREATOR PORTAL */
         <FanPortal
           creator={currentAccount}
+          creators={accounts}
+          activeCreatorId={activeAccountId}
+          onSelectCreator={setActiveAccountId}
           fanUser={fanUser}
-          messages={messagesMap['valentin'] || []}
+          messages={fanMessagesMap[activeAccountId] || []}
           onSendMessageFromFan={handleSendMessageFromFan}
           onUnlockPPV={handleUnlockPPVFromFan}
           onSendTip={handleFanTip}

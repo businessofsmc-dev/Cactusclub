@@ -9,26 +9,35 @@ import {
   Sun, 
   Moon, 
   Plus, 
-  Wallet 
+  Wallet,
+  Sparkles,
+  Users,
+  ChevronRight,
+  Clock,
+  CheckCircle2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { sounds } from '../../utils/sound';
 import type { CreatorAccount, ChatMessage, FanUser, CreatorPost } from '../../types/crm';
-import { INITIAL_CREATOR_POSTS } from '../../data/mockData';
+import { CREATOR_ACCOUNTS, INITIAL_CREATOR_POSTS } from '../../data/mockData';
 import { FanChatView } from './FanChatView';
 import { FanAuthModal } from './FanAuthModal';
 import { FanSubscribeModal } from './FanSubscribeModal';
 import { FanTipModal } from './FanTipModal';
 import { FanWalletModal } from './FanWalletModal';
+import { FanCommentsModal } from './FanCommentsModal';
 
 interface FanPortalProps {
   creator: CreatorAccount;
+  creators?: CreatorAccount[];
+  activeCreatorId?: string;
+  onSelectCreator?: (creatorId: string) => void;
   fanUser: FanUser;
   messages: ChatMessage[];
   onSendMessageFromFan: (text: string) => void;
   onUnlockPPV: (messageId: string, price: number) => boolean;
   onSendTip: (amount: number, message: string) => void;
-  onSubscribe: (tier: 'monthly' | 'quarterly' | 'vip', price: number) => void;
+  onSubscribe: (tier: 'free' | 'monthly' | 'quarterly' | 'vip', price: number) => void;
   onTopUpWallet: (amount: number) => void;
   onUpdateFanUser?: (user: FanUser) => void;
   onNavigateToOperator: () => void;
@@ -41,6 +50,9 @@ interface FanPortalProps {
 
 export const FanPortal: React.FC<FanPortalProps> = ({
   creator,
+  creators = CREATOR_ACCOUNTS,
+  activeCreatorId,
+  onSelectCreator,
   fanUser,
   messages,
   onSendMessageFromFan,
@@ -56,7 +68,7 @@ export const FanPortal: React.FC<FanPortalProps> = ({
   darkMode,
   onToggleDarkMode,
 }) => {
-  const [activeTab, setActiveTab] = useState<'feed' | 'chat' | 'subscribe'>('feed');
+  const [activeTab, setActiveTab] = useState<'creators' | 'feed' | 'chat' | 'subscribe'>('feed');
   const [posts, setPosts] = useState<CreatorPost[]>(INITIAL_CREATOR_POSTS);
 
   // Modals
@@ -64,6 +76,13 @@ export const FanPortal: React.FC<FanPortalProps> = ({
   const [isSubOpen, setIsSubOpen] = useState(false);
   const [isTipOpen, setIsTipOpen] = useState(false);
   const [isWalletOpen, setIsWalletOpen] = useState(false);
+  const [commentingPost, setCommentingPost] = useState<CreatorPost | null>(null);
+
+  const currentCreatorId = activeCreatorId || creator.id;
+
+  // Filter posts for active creator, fallback to all if none exist
+  const creatorPosts = posts.filter((p) => p.creatorId === currentCreatorId);
+  const displayedPosts = creatorPosts.length > 0 ? creatorPosts : posts;
 
   // Toggle post like
   const handleLikePost = (postId: string) => {
@@ -103,6 +122,29 @@ export const FanPortal: React.FC<FanPortalProps> = ({
     );
   };
 
+  // Select creator and initiate chat or prompt subscription
+  const handleStartChatWithCreator = (creatorId: string) => {
+    if (onSelectCreator) {
+      onSelectCreator(creatorId);
+    }
+
+    // When deciding to write to a creator: if not subscribed and no plan active, prompt subscription
+    if (!fanUser.isSubscribed && fanUser.subscriptionTier !== 'free') {
+      setIsSubOpen(true);
+      sounds.playReceive();
+      return;
+    }
+
+    setActiveTab('chat');
+    sounds.playSend();
+    confetti({
+      particleCount: 40,
+      spread: 60,
+      origin: { y: 0.7, x: 0.5 },
+      colors: ['#ec4899', '#8b5cf6', '#3b82f6'],
+    });
+  };
+
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#f3f4f8] dark:bg-[#0c0e17] text-gray-900 dark:text-white font-sans select-none">
       {/* Top Application Header */}
@@ -120,7 +162,7 @@ export const FanPortal: React.FC<FanPortalProps> = ({
 
           {/* Quick Role Switcher Pills */}
           <div className="hidden md:flex items-center space-x-1 p-1 rounded-xl bg-gray-100 dark:bg-[#1a2033] text-xs font-semibold">
-            <span className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#252b45] text-blue-600 dark:text-blue-400 font-bold shadow-xs">
+            <span className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#252b45] text-pink-600 dark:text-pink-400 font-bold shadow-xs">
               👑 Espace Fan
             </span>
             <button
@@ -201,149 +243,388 @@ export const FanPortal: React.FC<FanPortalProps> = ({
         </div>
       </header>
 
-      {/* Main Fan Workspace Split */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left/Center Main Column: Profile & Feed OR Live Chat */}
-        <main className="flex-1 flex flex-col h-full overflow-y-auto">
-          {/* Creator Profile Showcase Banner */}
-          <div className="bg-white dark:bg-[#131624] border-b border-gray-200 dark:border-[#1f2438]">
-            {/* Cover Banner */}
-            <div className="h-44 sm:h-52 w-full relative overflow-hidden bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-700">
-              <img
-                src="https://images.unsplash.com/photo-1518895949257-7621c3c786d7?auto=format&fit=crop&w=1400&q=80"
-                alt="Margot Cover"
-                className="w-full h-full object-cover opacity-70"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
-            </div>
+      {/* TOP STORIES CAROUSEL: VIP CREATOR AVATARS STRIP */}
+      <section className="bg-white/95 dark:bg-[#131624]/95 backdrop-blur-md border-b border-gray-200 dark:border-[#1f2438] px-4 sm:px-6 py-3 flex-shrink-0 z-20 shadow-xs">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center space-x-2">
+            <span className="flex h-2.5 w-2.5 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-pink-500"></span>
+            </span>
+            <h2 className="text-xs font-black uppercase tracking-wider text-gray-900 dark:text-white">
+              Créatrices VIP en Direct ({creators.length})
+            </h2>
+            <span className="hidden sm:inline-block text-[10px] px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-600 dark:text-pink-400 font-bold">
+              Cliquez pour discuter en tête-à-tête
+            </span>
+          </div>
 
-            {/* Profile Info Row */}
-            <div className="px-6 pb-5 relative">
-              <div className="flex flex-col sm:flex-row sm:items-end justify-between -mt-14 sm:-mt-16 mb-4 gap-4">
-                {/* Avatar with Story Gradient Ring */}
-                <div className="flex items-end space-x-4">
-                  <div className="relative p-1 rounded-full bg-gradient-to-tr from-pink-500 via-purple-500 to-amber-400 shadow-2xl">
+          <button
+            onClick={() => setActiveTab('creators')}
+            className={`text-xs font-bold transition-colors flex items-center space-x-1 cursor-pointer ${
+              activeTab === 'creators'
+                ? 'text-pink-600 dark:text-pink-400'
+                : 'text-blue-600 dark:text-blue-400 hover:text-blue-700'
+            }`}
+          >
+            <span>Toutes les créatrices</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* Horizontal Creator Avatars Scroll Strip */}
+        <div className="flex items-center space-x-4 overflow-x-auto no-scrollbar py-1">
+          {creators.map((c) => {
+            const isSelected = c.id === currentCreatorId;
+            return (
+              <div
+                key={c.id}
+                onClick={() => {
+                  if (onSelectCreator) onSelectCreator(c.id);
+                  sounds.playReceive();
+                }}
+                className={`flex flex-col items-center flex-shrink-0 group cursor-pointer transition-all duration-200 ${
+                  isSelected ? 'scale-105' : 'hover:scale-102 opacity-90 hover:opacity-100'
+                }`}
+              >
+                {/* Avatar with Animated Gradient Story Ring */}
+                <div className="relative p-0.5">
+                  <div
+                    className={`w-15 h-15 sm:w-16 sm:h-16 rounded-full p-0.5 transition-all duration-300 ${
+                      isSelected
+                        ? 'bg-gradient-to-tr from-pink-500 via-purple-500 to-amber-400 ring-2 ring-pink-500 ring-offset-2 dark:ring-offset-[#131624] shadow-lg shadow-pink-500/30'
+                        : 'bg-gradient-to-tr from-gray-300 to-gray-400 dark:from-gray-700 dark:to-gray-600 group-hover:from-pink-400 group-hover:to-purple-500'
+                    }`}
+                  >
                     <img
-                      src={creator.avatar}
-                      alt={creator.name}
-                      className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-white dark:border-[#131624]"
+                      src={c.avatar}
+                      alt={c.name}
+                      className="w-full h-full rounded-full object-cover border-2 border-white dark:border-[#131624]"
                     />
-                    <span className="absolute bottom-2 right-2 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white dark:border-[#131624] animate-pulse"></span>
                   </div>
 
-                  <div className="pb-1">
-                    <div className="flex items-center space-x-1.5">
-                      <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
-                        {creator.name}
-                      </h1>
-                      <div className="w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs shadow-sm">
-                        ✓
-                      </div>
-                    </div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                      {creator.handle} • <span className="text-pink-500 font-bold">Top 0.05%</span>
+                  {/* Online Live Pulsing Dot */}
+                  <span className="absolute bottom-0 right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white dark:border-[#131624] flex items-center justify-center">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                  </span>
+
+                  {/* Top VIP / Live Tag */}
+                  {c.id === 'margot-vip' ? (
+                    <span className="absolute -top-1 -right-1 px-1.5 py-0.2 rounded-full bg-gradient-to-r from-amber-400 to-amber-600 text-black font-black text-[8px] shadow-xs">
+                      VIP
                     </span>
-                  </div>
-                </div>
-
-                {/* Primary Action Buttons */}
-                <div className="flex items-center space-x-2.5">
-                  <button
-                    onClick={() => setActiveTab('chat')}
-                    className="flex-1 sm:flex-initial flex items-center justify-center space-x-1.5 px-4 py-2.5 rounded-2xl bg-gray-100 dark:bg-[#1f253d] hover:bg-gray-200 dark:hover:bg-[#272f4d] text-gray-900 dark:text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
-                  >
-                    <MessageCircle className="w-4 h-4 text-blue-500" />
-                    <span>Discuter en Privé</span>
-                  </button>
-
-                  <button
-                    onClick={() => setIsTipOpen(true)}
-                    className="flex-1 sm:flex-initial flex items-center justify-center space-x-1.5 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white text-xs font-bold transition-all shadow-md shadow-pink-500/20 active:scale-95 cursor-pointer"
-                  >
-                    <Heart className="w-4 h-4 fill-white" />
-                    <span>Pourboire</span>
-                  </button>
-
-                  {!fanUser.isSubscribed && (
-                    <button
-                      onClick={() => setIsSubOpen(true)}
-                      className="flex-1 sm:flex-initial flex items-center justify-center space-x-1.5 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 active:scale-95 cursor-pointer"
-                    >
-                      <Crown className="w-4 h-4" />
-                      <span>S'abonner ($9.99)</span>
-                    </button>
+                  ) : (
+                    <span className="absolute -top-1 -right-1 px-1.5 py-0.2 rounded-full bg-pink-500 text-white font-black text-[8px] shadow-xs">
+                      LIVE
+                    </span>
                   )}
                 </div>
+
+                {/* Name & Quick Chat Trigger */}
+                <div className="mt-1.5 text-center flex flex-col items-center">
+                  <span
+                    className={`text-[11px] font-bold truncate max-w-[80px] ${
+                      isSelected ? 'text-pink-600 dark:text-pink-400' : 'text-gray-800 dark:text-gray-200'
+                    }`}
+                  >
+                    {c.name.split(' ')[0]}
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleStartChatWithCreator(c.id);
+                    }}
+                    className="mt-0.5 text-[9px] px-2 py-0.5 rounded-md bg-blue-500/10 hover:bg-blue-600 hover:text-white text-blue-600 dark:text-blue-400 font-bold transition-all flex items-center space-x-0.5 cursor-pointer shadow-2xs"
+                  >
+                    <MessageCircle className="w-2.5 h-2.5" />
+                    <span>Discuter</span>
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Main Fan Workspace Split */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left/Center Main Column: Profile & Feed OR Live Chat OR Creators Directory */}
+        <main className="flex-1 flex flex-col h-full overflow-y-auto">
+          {/* Creator Profile Showcase Banner (Hidden when in full chat tab or creators tab to maximize focus) */}
+          {activeTab !== 'chat' && (
+            <div className="bg-white dark:bg-[#131624] border-b border-gray-200 dark:border-[#1f2438]">
+              {/* Cover Banner */}
+              <div className="h-44 sm:h-52 w-full relative overflow-hidden bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-700">
+                <img
+                  src={creator.coverUrl || 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?auto=format&fit=crop&w=1400&q=80'}
+                  alt={`${creator.name} Cover`}
+                  className="w-full h-full object-cover opacity-75 hover:scale-101 transition-transform duration-700"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
               </div>
 
-              {/* Bio & Stats */}
-              <p className="text-xs text-gray-700 dark:text-gray-300 max-w-2xl leading-relaxed">
-                Bienvenue dans mon univers intime et exclusif 🇫🇷 Je réponds personnellement à tous mes messages privés chaque jour. Débloquez mes photos & vidéos exclusives en 4K, mes mémos vocaux et mes coulisses de tournages ! ✨
-              </p>
+              {/* Profile Info Row */}
+              <div className="px-6 pb-5 relative">
+                <div className="flex flex-col sm:flex-row sm:items-end justify-between -mt-14 sm:-mt-16 mb-4 gap-4">
+                  {/* Avatar with Story Gradient Ring */}
+                  <div className="flex items-end space-x-4">
+                    <div className="relative p-1 rounded-full bg-gradient-to-tr from-pink-500 via-purple-500 to-amber-400 shadow-2xl">
+                      <img
+                        src={creator.avatar}
+                        alt={creator.name}
+                        className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-white dark:border-[#131624]"
+                      />
+                      <span className="absolute bottom-2 right-2 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white dark:border-[#131624] animate-pulse"></span>
+                    </div>
 
-              {/* Creator Numbers Strip */}
-              <div className="flex items-center space-x-6 mt-4 pt-3 border-t border-gray-100 dark:border-[#1d2338] text-xs">
-                <div>
-                  <span className="font-black text-gray-900 dark:text-white font-mono-numbers">1,240</span>
-                  <span className="text-gray-500 dark:text-gray-400 ml-1">Publications</span>
+                    <div className="pb-1">
+                      <div className="flex items-center space-x-1.5">
+                        <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
+                          {creator.name}
+                        </h1>
+                        <div className="w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs shadow-sm">
+                          ✓
+                        </div>
+                      </div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                        {creator.handle} • <span className="text-pink-500 font-bold">{creator.category || 'Top 0.05%'}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Primary Action Buttons */}
+                  <div className="flex items-center space-x-2.5">
+                    <button
+                      onClick={() => handleStartChatWithCreator(creator.id)}
+                      className="flex-1 sm:flex-initial flex items-center justify-center space-x-1.5 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 active:scale-95 cursor-pointer"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      <span>Discuter en Privé</span>
+                    </button>
+
+                    <button
+                      onClick={() => setIsTipOpen(true)}
+                      className="flex-1 sm:flex-initial flex items-center justify-center space-x-1.5 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white text-xs font-bold transition-all shadow-md shadow-pink-500/20 active:scale-95 cursor-pointer"
+                    >
+                      <Heart className="w-4 h-4 fill-white" />
+                      <span>Pourboire</span>
+                    </button>
+
+                    {!fanUser.isSubscribed && (
+                      <button
+                        onClick={() => setIsSubOpen(true)}
+                        className="flex-1 sm:flex-initial flex items-center justify-center space-x-1.5 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black text-xs font-bold transition-all shadow-md shadow-amber-500/20 active:scale-95 cursor-pointer"
+                      >
+                        <Crown className="w-4 h-4" />
+                        <span>S'abonner ($9.99)</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <span className="font-black text-gray-900 dark:text-white font-mono-numbers">28.4k</span>
-                  <span className="text-gray-500 dark:text-gray-400 ml-1">Abonnés</span>
-                </div>
-                <div>
-                  <span className="font-black text-gray-900 dark:text-white font-mono-numbers">98.4k</span>
-                  <span className="text-gray-500 dark:text-gray-400 ml-1">J'aime</span>
+
+                {/* Bio & Stats */}
+                <p className="text-xs text-gray-700 dark:text-gray-300 max-w-2xl leading-relaxed">
+                  {creator.bio || 'Bienvenue dans mon univers intime et exclusif 🇫🇷 Je réponds personnellement à tous mes messages privés chaque jour. Débloquez mes photos & vidéos exclusives en 4K, mes mémos vocaux et mes coulisses de tournages ! ✨'}
+                </p>
+
+                {/* Creator Numbers Strip */}
+                <div className="flex items-center space-x-6 mt-4 pt-3 border-t border-gray-100 dark:border-[#1d2338] text-xs">
+                  <div>
+                    <span className="font-black text-gray-900 dark:text-white font-mono-numbers">
+                      {displayedPosts.length}
+                    </span>
+                    <span className="text-gray-500 dark:text-gray-400 ml-1">Publications</span>
+                  </div>
+                  <div>
+                    <span className="font-black text-gray-900 dark:text-white font-mono-numbers">
+                      {creator.subscribersCount || '28.4k'}
+                    </span>
+                    <span className="text-gray-500 dark:text-gray-400 ml-1">Abonnés</span>
+                  </div>
+                  <div>
+                    <span className="font-black text-gray-900 dark:text-white font-mono-numbers">
+                      {creator.responseSpeed || '~2 min'}
+                    </span>
+                    <span className="text-gray-500 dark:text-gray-400 ml-1">Réponse moy.</span>
+                  </div>
+                  <div>
+                    <span className="font-black text-amber-500 font-mono-numbers">
+                      ★ {creator.rating || 4.9}
+                    </span>
+                    <span className="text-gray-500 dark:text-gray-400 ml-1">Avis VIP</span>
+                  </div>
                 </div>
               </div>
+
+              {/* Profile Navigation Tabs */}
+              <div className="flex items-center px-6 border-t border-gray-200 dark:border-[#1f2438] text-xs font-bold overflow-x-auto no-scrollbar">
+                <button
+                  onClick={() => setActiveTab('creators')}
+                  className={`py-3 px-4 border-b-2 transition-all cursor-pointer flex items-center space-x-2 flex-shrink-0 ${
+                    activeTab === 'creators'
+                      ? 'border-pink-600 text-pink-600 dark:text-pink-400'
+                      : 'border-transparent text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Users className="w-4 h-4 text-pink-500" />
+                  <span>⭐ Nos Créatrices ({creators.length})</span>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('feed')}
+                  className={`py-3 px-4 border-b-2 transition-all cursor-pointer flex items-center space-x-2 flex-shrink-0 ${
+                    activeTab === 'feed'
+                      ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                      : 'border-transparent text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  <ImageIcon className="w-4 h-4" />
+                  <span>Publications ({displayedPosts.length})</span>
+                </button>
+
+                <button
+                  onClick={() => handleStartChatWithCreator(creator.id)}
+                  className="py-3 px-4 border-b-2 border-transparent text-gray-500 hover:text-gray-900 dark:hover:text-white transition-all cursor-pointer flex items-center space-x-2 flex-shrink-0"
+                >
+                  <MessageCircle className="w-4 h-4 text-blue-500" />
+                  <span>Discussion en Direct</span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('subscribe')}
+                  className={`py-3 px-4 border-b-2 transition-all cursor-pointer flex items-center space-x-2 flex-shrink-0 ${
+                    activeTab === 'subscribe'
+                      ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                      : 'border-transparent text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Crown className="w-4 h-4" />
+                  <span>Formules VIP</span>
+                </button>
+              </div>
             </div>
-
-            {/* Profile Navigation Tabs */}
-            <div className="flex items-center px-6 border-t border-gray-200 dark:border-[#1f2438] text-xs font-bold">
-              <button
-                onClick={() => setActiveTab('feed')}
-                className={`py-3 px-4 border-b-2 transition-all cursor-pointer flex items-center space-x-2 ${
-                  activeTab === 'feed'
-                    ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                <ImageIcon className="w-4 h-4" />
-                <span>Publications ({posts.length})</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab('chat')}
-                className={`py-3 px-4 border-b-2 transition-all cursor-pointer flex items-center space-x-2 ${
-                  activeTab === 'chat'
-                    ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span>Discussion en Direct</span>
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab('subscribe')}
-                className={`py-3 px-4 border-b-2 transition-all cursor-pointer flex items-center space-x-2 ${
-                  activeTab === 'subscribe'
-                    ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                <Crown className="w-4 h-4" />
-                <span>Formules VIP</span>
-              </button>
-            </div>
-          </div>
+          )}
 
           {/* Tab Content Display */}
           <div className="flex-1 flex overflow-hidden">
+            {/* VIEW A: CREATORS / AVATARS SHOWCASE DIRECTORY */}
+            {activeTab === 'creators' && (
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 max-w-5xl mx-auto w-full space-y-6">
+                <div className="text-center max-w-xl mx-auto mb-4">
+                  <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-pink-500/10 text-pink-600 dark:text-pink-400 text-xs font-bold mb-2">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Réseau Officiel CactusClub</span>
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
+                    Choisissez votre Créatrice Privée
+                  </h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Sélectionnez un avatar pour démarrer une conversation privée ou découvrir ses shootings et vidéos inédites.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {creators.map((c) => {
+                    const isSelected = c.id === currentCreatorId;
+                    return (
+                      <div
+                        key={c.id}
+                        className={`rounded-3xl bg-white dark:bg-[#131624] border-2 transition-all duration-300 overflow-hidden shadow-xs flex flex-col justify-between group ${
+                          isSelected
+                            ? 'border-pink-500 shadow-md shadow-pink-500/10'
+                            : 'border-gray-200/90 dark:border-[#1e2338] hover:border-pink-400/60'
+                        }`}
+                      >
+                        <div>
+                          {/* Mini Cover */}
+                          <div className="h-28 w-full relative overflow-hidden bg-gradient-to-r from-pink-500 to-indigo-600">
+                            <img
+                              src={c.coverUrl || 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?auto=format&fit=crop&w=800&q=80'}
+                              alt={c.name}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-80"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+
+                            {/* Badge VIP / Catégorie */}
+                            <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-[10px] font-bold text-white">
+                              {c.category || 'VIP'}
+                            </span>
+                          </div>
+
+                          {/* Avatar & Identité */}
+                          <div className="px-5 pb-3 relative">
+                            <div className="flex items-end justify-between -mt-10 mb-2">
+                              <div className="relative p-0.5 rounded-full bg-gradient-to-tr from-pink-500 to-purple-600 shadow-xl">
+                                <img
+                                  src={c.avatar}
+                                  alt={c.name}
+                                  className="w-16 h-16 rounded-full object-cover border-2 border-white dark:border-[#131624]"
+                                />
+                                <span className="absolute bottom-1 right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white dark:border-[#131624] animate-pulse"></span>
+                              </div>
+
+                              <div className="text-right">
+                                <span className="text-[11px] font-bold text-emerald-500 flex items-center justify-end space-x-1">
+                                  <Clock className="w-3 h-3" />
+                                  <span>{c.responseSpeed || '~2 min'}</span>
+                                </span>
+                                <span className="text-[10px] text-gray-400">
+                                  {c.subscribersCount || '25k'} abonnés
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center space-x-1.5 mt-1">
+                              <h3 className="font-black text-sm text-gray-900 dark:text-white">
+                                {c.name}
+                              </h3>
+                              <CheckCircle2 className="w-3.5 h-3.5 text-blue-500" />
+                            </div>
+                            <span className="text-[11px] text-gray-400 font-mono-numbers block">
+                              {c.handle}
+                            </span>
+
+                            {/* Bio */}
+                            <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 mt-2 leading-relaxed">
+                              {c.bio}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Card Actions */}
+                        <div className="p-4 pt-0 flex items-center space-x-2">
+                          <button
+                            onClick={() => handleStartChatWithCreator(c.id)}
+                            className="flex-1 py-2.5 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white font-bold text-xs shadow-md shadow-pink-500/20 active:scale-95 transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+                          >
+                            <MessageCircle className="w-3.5 h-3.5" />
+                            <span>Discuter en Privé</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              if (onSelectCreator) onSelectCreator(c.id);
+                              setActiveTab('feed');
+                              sounds.playReceive();
+                            }}
+                            className="px-3 py-2.5 rounded-2xl bg-gray-100 dark:bg-[#1f253d] hover:bg-gray-200 dark:hover:bg-[#272f4d] text-gray-800 dark:text-gray-200 font-bold text-xs transition-colors cursor-pointer"
+                            title="Voir ses publications"
+                          >
+                            <ImageIcon className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* VIEW B: CREATOR FEED PUBLICATIONS */}
             {activeTab === 'feed' && (
               <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 max-w-3xl mx-auto w-full">
-                {posts.map((post) => (
+                {displayedPosts.map((post) => (
                   <article
                     key={post.id}
                     className="bg-white dark:bg-[#131624] rounded-3xl border border-gray-200/90 dark:border-[#1e2338] shadow-xs overflow-hidden"
@@ -429,7 +710,7 @@ export const FanPortal: React.FC<FanPortalProps> = ({
                         </button>
 
                         <button
-                          onClick={() => setActiveTab('chat')}
+                          onClick={() => setCommentingPost(post)}
                           className="flex items-center space-x-1.5 hover:text-blue-500 transition-colors cursor-pointer"
                         >
                           <MessageCircle className="w-4 h-4" />
@@ -437,41 +718,56 @@ export const FanPortal: React.FC<FanPortalProps> = ({
                         </button>
                       </div>
 
-                      <button
-                        onClick={() => setIsTipOpen(true)}
-                        className="flex items-center space-x-1 text-pink-500 hover:text-pink-600 font-bold cursor-pointer"
-                      >
-                        <Heart className="w-3.5 h-3.5" />
-                        <span>Envoyer un Pourboire</span>
-                      </button>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleStartChatWithCreator(creator.id)}
+                          className="flex items-center space-x-1 text-blue-500 hover:text-blue-600 font-bold cursor-pointer"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          <span>Discuter</span>
+                        </button>
+                        <button
+                          onClick={() => setIsTipOpen(true)}
+                          className="flex items-center space-x-1 text-pink-500 hover:text-pink-600 font-bold cursor-pointer"
+                        >
+                          <Heart className="w-3.5 h-3.5" />
+                          <span>Pourboire</span>
+                        </button>
+                      </div>
                     </div>
                   </article>
                 ))}
               </div>
             )}
 
+            {/* VIEW C: LIVE CHAT VIEW WITH CURRENT CREATOR */}
             {activeTab === 'chat' && (
               <div className="flex-1 flex overflow-hidden">
                 <FanChatView
                   creator={creator}
+                  creators={creators}
+                  activeCreatorId={currentCreatorId}
+                  onSelectCreator={onSelectCreator}
                   fanUser={fanUser}
                   messages={messages}
                   onSendMessage={onSendMessageFromFan}
                   onUnlockPPV={onUnlockPPV}
                   onOpenTipModal={() => setIsTipOpen(true)}
                   onOpenLightbox={onOpenLightbox}
+                  onOpenSubscribeModal={() => setIsSubOpen(true)}
                 />
               </div>
             )}
 
+            {/* VIEW D: VIP SUBSCRIPTION FORMULAS */}
             {activeTab === 'subscribe' && (
               <div className="flex-1 overflow-y-auto p-6 max-w-4xl mx-auto w-full">
                 <div className="text-center mb-8">
                   <h2 className="text-2xl font-black text-gray-900 dark:text-white">
-                    Choisissez votre formule VIP
+                    Choisissez votre formule VIP pour {creator.name}
                   </h2>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-md mx-auto">
-                    Rejoignez plus de 28,000 abonnés privilégiés et discutez chaque jour en privé avec Margot.
+                    Rejoignez les abonnés privilégiés et discutez chaque jour en tête-à-tête avec elle.
                   </p>
                 </div>
 
@@ -542,7 +838,12 @@ export const FanPortal: React.FC<FanPortalProps> = ({
         isOpen={isSubOpen}
         onClose={() => setIsSubOpen(false)}
         fanUser={fanUser}
-        onSubscribeSuccess={onSubscribe}
+        creator={creator}
+        onSubscribeSuccess={(tier, price) => {
+          onSubscribe(tier, price);
+          setActiveTab('chat');
+        }}
+        onOpenWalletModal={() => setIsWalletOpen(true)}
       />
 
       <FanTipModal
@@ -558,7 +859,20 @@ export const FanPortal: React.FC<FanPortalProps> = ({
         fanUser={fanUser}
         onTopUp={onTopUpWallet}
       />
+
+      <FanCommentsModal
+        isOpen={!!commentingPost}
+        onClose={() => setCommentingPost(null)}
+        post={commentingPost}
+        fanUser={fanUser}
+        onAddCommentSuccess={(postId) => {
+          setPosts((prev) =>
+            prev.map((p) =>
+              p.id === postId ? { ...p, commentsCount: p.commentsCount + 1 } : p
+            )
+          );
+        }}
+      />
     </div>
   );
 };
-
