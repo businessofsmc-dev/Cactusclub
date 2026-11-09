@@ -104,8 +104,33 @@ export interface CannedScript {
 
 export interface ToastMessage {
   id: string;
-  type: 'success' | 'tip' | 'ppv' | 'info';
+  type: 'success' | 'tip' | 'ppv' | 'info' | 'error';
   title: string;
   description: string;
   amount?: number;
+}
+
+export interface FanUser {
+  id: string;
+  name: string;
+  username: string;
+  email?: string;
+  avatar: string;
+  walletBalance: number;
+  isSubscribed: boolean;
+  subscriptionTier?: 'monthly' | 'quarterly' | 'vip';
+  unlockedMediaIds: string[];
+}
+
+export interface CreatorPost {
+  id: string;
+  creatorId: string;
+  createdAt: string;
+  caption: string;
+  mediaUrl: string;
+  isLocked: boolean;
+  price?: number;
+  likesCount: number;
+  commentsCount: number;
+  isLiked?: boolean;
 }

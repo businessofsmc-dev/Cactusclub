@@ -6,21 +6,26 @@ Documentation complète de l'architecture logicielle, de l'organisation des comp
 
 ## 1. Vue d'Ensemble & Vision Système
 
-CactusClub sépare rigoureusement la **Business Intelligence Agence** et le **Live Chatting Opérationnel** :
+CactusClub intègre harmonieusement les 3 facettes indissociables d'un écosystème d'agence moderne : l'**Expérience Fan/Visiteur**, la **Console Opérateur Chatter** et la **Business Intelligence Agence** :
 
 ```mermaid
 flowchart TD
-    User([Opérateur / Admin / Chatter]) --> Router{Moteur de Routage SPA}
+    User([Utilisateur / Visiteur / Chatter / Admin]) --> Router{Moteur de Routage SPA}
     
-    Router -->|"/admin"| AdminView["Dashboard Admin (Business Intelligence)"]
-    Router -->|"/" ou "/messages"| ChatView["Station Live Chat (Messages Pro)"]
+    Router -->|"/" ou "/fan"| FanView["Portail Fan & Visiteur (Chat, PPV, Abonnements, Wallet)"]
+    Router -->|"/messages"| ChatView["Station Live Chat (Messages Pro Chatter Console)"]
+    Router -->|"/admin"| AdminView["Dashboard Admin (Business Intelligence & Direction)"]
     
     subgraph "Couche Globale Partagée"
         I18n["i18n Context (FR / EN / ES / DE)"]
-        Audio["Web Audio Synthesizer Engine"]
-        Theme["Theme & SFW Privacy Engine"]
-        Modals["Modals Unifiés (Vault, PPV, Scripts, Settings)"]
+        Audio["Web Audio Synthesizer Engine (0ms Latency)"]
+        Theme["Theme (Light/Dark) & SFW Privacy Engine"]
+        Modals["Modals Unifiés (Vault, PPV, Scripts, Settings, Subscriptions, Tips)"]
     end
+    
+    FanView -.-> Audio
+    FanView -.-> Theme
+    FanView -.-> Modals
     
     AdminView -.-> I18n
     AdminView -.-> Audio
@@ -44,6 +49,12 @@ cactusclub/
 ├── src/
 │   ├── assets/                     # Médias et logos statiques
 │   ├── components/                 # Composants d'interface modulaires
+│   │   ├── fan/                    # Expérience Fan / Visiteur
+│   │   │   ├── FanAuthModal.tsx    # Modal Inscription / Connexion avec démo $150
+│   │   │   ├── FanChatView.tsx     # Messenger en direct avec Margot & lecteur de PPV
+│   │   │   ├── FanPortal.tsx       # Vitrine créatrice, profil, feed et gestion de solde
+│   │   │   ├── FanSubscribeModal.tsx # Sélecteur d'abonnements (1 mois, 3 mois, VIP)
+│   │   │   └── FanTipModal.tsx     # Modal d'envoi de pourboires personnalisés
 │   │   ├── AddAccountModal.tsx     # Modale d'ajout de compte créateur
 │   │   ├── AdminDashboard.tsx      # Dashboard Admin complet (Bézier, Stats, Shifts)
 │   │   ├── BroadcastModal.tsx      # Modale de campagne DM en masse

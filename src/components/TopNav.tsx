@@ -33,6 +33,7 @@ interface TopNavProps {
   activeChatter: string;
   onSelectChatter: (name: string) => void;
   onBackToDashboard?: () => void;
+  onNavigateToFan?: () => void;
   onOpenAddAccount?: () => void;
   onSimulateFanMessage?: () => void;
   onSimulateTip?: (amount: number) => void;
@@ -57,6 +58,7 @@ export const TopNav: React.FC<TopNavProps> = ({
   activeChatter,
   onSelectChatter,
   onBackToDashboard,
+  onNavigateToFan,
   onOpenAddAccount,
   onSimulateFanMessage,
   onSimulateTip,
@@ -229,6 +231,17 @@ export const TopNav: React.FC<TopNavProps> = ({
             <Home className="w-3.5 h-3.5 text-blue-400" />
             <span className="font-semibold tracking-wide">{t.home}</span>
           </button>
+
+          {/* Quick Switch to Fan Portal */}
+          {onNavigateToFan && (
+            <button
+              onClick={onNavigateToFan}
+              title="Voir l'expérience Fan / Visiteur"
+              className="flex items-center space-x-1 px-2.5 py-1 rounded bg-pink-500/15 hover:bg-pink-500/25 text-pink-300 border border-pink-500/30 text-[11px] font-semibold transition-all cursor-pointer shadow-xs"
+            >
+              <span>👑 Vue Fan</span>
+            </button>
+          )}
 
           {/* Chatters list with active shift */}
           {chatters.map((chatter) => {

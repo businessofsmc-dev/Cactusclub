@@ -42,6 +42,7 @@ import { sounds } from '../utils/sound';
 
 interface AdminDashboardProps {
   onNavigateToMessages: () => void;
+  onNavigateToFan?: () => void;
   sfwMode: boolean;
   onToggleSfw: () => void;
   darkMode: boolean;
@@ -61,6 +62,7 @@ const LANGUAGES_LIST: { code: Language; name: string; flag: string }[] = [
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onNavigateToMessages,
+  onNavigateToFan,
   sfwMode,
   onToggleSfw,
   darkMode,
@@ -295,6 +297,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <ExternalLink className="w-3 h-3 text-gray-400 group-hover:text-blue-500" />
             </div>
           </button>
+
+          {/* Espace Fan / Visiteur (Direct link to Fan Portal!) */}
+          {onNavigateToFan && (
+            <button
+              onClick={onNavigateToFan}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-gray-800 dark:text-gray-200 hover:bg-pink-50 dark:hover:bg-pink-500/10 hover:text-pink-600 dark:hover:text-pink-400 transition-all font-semibold cursor-pointer group"
+            >
+              <div className="flex items-center space-x-2.5">
+                <span className="text-base group-hover:scale-110 transition-transform">👑</span>
+                <span>Portail Fan</span>
+              </div>
+              <ExternalLink className="w-3 h-3 text-gray-400 group-hover:text-pink-500" />
+            </button>
+          )}
 
           {/* Growth Collapsible */}
           <div>

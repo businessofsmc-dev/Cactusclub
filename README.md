@@ -6,18 +6,39 @@ Plateforme SaaS haute performance et pixel-perfect conçue pour les agences de g
 
 ---
 
-## 🧭 Deux Interfaces Dédiées
+## 🧭 Trois Interfaces Dédiées
 
 | Interface | URL d'Accès Direct | Rôle Principal |
 | :--- | :--- | :--- |
-| **Dashboard Admin** | **`http://localhost:5173/admin`** | Pilotage financier, performance des chatters, planning des shifts & configuration globale |
-| **Messages Pro Workstation** | **`http://localhost:5173/`** ou **`/messages`** | Cockpit 3 colonnes pour chatters en direct, scripts, PPV & CRM fans |
+| **Portail Fan / Visiteur** | **`http://localhost:5173/`** ou **`/fan`** | Expérience fan : Inscription/Connexion, chat privé avec Margot, achat de médias PPV verrouillés, pourboires avec confettis, abonnements VIP |
+| **Messages Pro Workstation** | **`http://localhost:5173/messages`** | Cockpit 3 colonnes pour chatters professionnels de l'agence, scripts de vente, injection de PPV, mémos vocaux & CRM fans |
+| **Dashboard Admin** | **`http://localhost:5173/admin`** | Pilotage financier ($6,739.07), classement et planning des chatters, courbe de Bézier interactive & paramètres d'agence |
 
 ---
 
 ## 🚀 Fonctionnalités Détaillées
 
-### 1. Dashboard Administrateur (`/admin`)
+### 1. Portail Fan / Visiteur (`/` ou `/fan`)
+* **Vitrine & Profil Créatrice de Margot** :
+  * Bannière de couverture haute résolution, avatar avec liseré dégradé Instagram Story et badge vérifié officiel (Top 0.05%).
+  * Statistiques en direct : 1 240 publications, 28,4k abonnés, 98,4k likes.
+  * Onglets de navigation : Publications (Feed), Discussion en direct, Formules VIP.
+* **Inscription & Connexion Fan avec Portefeuille Intégré** :
+  * Modal d'inscription / connexion épuré avec formulaire complet ou bouton démo 1-clic préchargé avec **$150 de solde offert**.
+  * Affichage en direct du solde portefeuille dans l'en-tête avec bouton de recharge rapide (+$50).
+* **Messagerie Privée en Direct avec Margot** :
+  * Échange de messages en temps réel avec Margot et la brigade de chatters de l'agence.
+  * Réponses automatiques chaleureuses simulées par Margot après chaque message du fan.
+  * Mémos vocaux privés avec lecteur de forme d'onde dynamique et sélecteur d'émojis fréquents.
+* **Achats de Médias Privés (PPV) & Pourboires** :
+  * Contenus exclusifs floutés avec cadenas doré et tarif de déblocage ($19.99, $25.00).
+  * Déblocage instantané déduit du solde portefeuille avec confettis multicolores et jingle d'encaissement.
+  * Modal d'envoi de pourboires personnalisés ($5, $10, $20, $50, $100 ou sur-mesure) avec petit mot doux pour la créatrice.
+* **Formules d'Abonnement VIP** :
+  * 3 formules configurables : Pass 1 Mois ($9.99), Pass 3 Mois Économique ($24.99) et VIP Élite 1 An ($79.99).
+  * Synchronisation immédiate avec le CRM de l'agence (le fan passe automatiquement au statut VIP et prioritaire).
+
+### 2. Dashboard Administrateur (`/admin`)
 * **Vue d'ensemble des revenus créateurs (*Creator Earnings Overview*)** :
   * Filtre temporel instantané : *Hier*, *Aujourd'hui*, *Cette semaine* ($6,739.07), *Ce mois*.
   * Décomposition détaillée sur 6 flux de revenus :
@@ -39,7 +60,7 @@ Plateforme SaaS haute performance et pixel-perfect conçue pour les agences de g
 * **Tiroir de notifications en temps réel** : Suivi des ventes PPV, pourboires reçus et alertes du moteur de sécurité Shield AI.
 * **Paramètres opérationnels d'agence** : Modal de configuration pour régler les pourcentages de commission (Créateur / Agence / Chatter), l'auto-traduction des messages fans et les seuils anti-fraude.
 
-### 2. Station Live Chat Messages Pro (`/` ou `/messages`)
+### 3. Station Live Chat Messages Pro (`/messages`)
 * **Architecture Cockpit en 3 Colonnes** :
   * **Colonne Gauche (Boîte de réception & Queue)** :
     * Badges de dépenses fans instantanés ($0, $80, $125, $860+).
@@ -59,7 +80,7 @@ Plateforme SaaS haute performance et pixel-perfect conçue pour les agences de g
     * Bloc-notes interne partagé entre les chatters de l'agence.
     * Bouton d'envoi de pourboire simulé avec confettis.
 
-### 3. Productivité & Outils Système
+### 4. Productivité & Outils Système
 * **Mode SFW (Safe For Work)** : Floutage gaussien matériel instantané de tous les visuels sensibles d'un simple clic sur le cadenas SFW.
 * **Moteur Multilingue (i18n)** : Prise en charge native du Français (🇫🇷), Anglais (🇬🇧), Espagnol (🇪🇸) et Allemand (🇩🇪) avec mémorisation des préférences.
 * **Thèmes Sombre & Clair** : Transitions soignées et contrastes étudiés pour le travail de jour comme de nuit.

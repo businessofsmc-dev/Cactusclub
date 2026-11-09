@@ -1,4 +1,4 @@
-import type { CreatorAccount, Fan, ChatMessage, CannedScript } from '../types/crm';
+import type { CreatorAccount, Fan, ChatMessage, CannedScript, FanUser, CreatorPost } from '../types/crm';
 
 export const CREATOR_ACCOUNTS: CreatorAccount[] = [
   {
@@ -385,4 +385,53 @@ export const CANNED_SCRIPTS: CannedScript[] = [
 
 export const FREQUENT_EMOJIS = [
   '😋', '😇', '🤠', '🥳', '🤩', '😎', '😻', '💖', '💋', '🙈', '😈', '🤤', '🍑', '🍆', '🔥', '💦', '💸', '🥂', '🚿', '🍓', '🖤', '✨'
+];
+
+export const INITIAL_FAN_USER: FanUser = {
+  id: 'fan-user-1',
+  name: 'Valentin',
+  username: '@valentin_vip',
+  email: 'valentin@cactusclub.agency',
+  avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
+  walletBalance: 125.00,
+  isSubscribed: true,
+  subscriptionTier: 'monthly',
+  unlockedMediaIds: [],
+};
+
+export const INITIAL_CREATOR_POSTS: CreatorPost[] = [
+  {
+    id: 'post-1',
+    creatorId: 'margot',
+    createdAt: 'Il y a 2 heures',
+    caption: 'Sortie de douche... 🚿 Vous préférez les cheveux mouillés ou détachés ? Dites-moi en message privé, je réponds à tout le monde aujourd’hui ! 💕',
+    mediaUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80',
+    isLocked: false,
+    likesCount: 342,
+    commentsCount: 58,
+    isLiked: false,
+  },
+  {
+    id: 'post-2',
+    creatorId: 'margot',
+    createdAt: 'Hier à 21:15',
+    caption: '🔒 EXCLUSIF VIP : Séance privée en lingerie de soie noire... 🖤 Débloquez la vidéo intégrale en 4K (3 min 45) !',
+    mediaUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80',
+    isLocked: true,
+    price: 19.99,
+    likesCount: 890,
+    commentsCount: 142,
+    isLiked: true,
+  },
+  {
+    id: 'post-3',
+    creatorId: 'margot',
+    createdAt: 'Il y a 3 jours',
+    caption: 'Petit selfie avant ma séance de sport ! Qui vient s’entraîner avec moi ? 🏋️‍♀️✨ Envoyez-moi un DM pour papoter ce soir !',
+    mediaUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
+    isLocked: false,
+    likesCount: 1240,
+    commentsCount: 189,
+    isLiked: false,
+  },
 ];

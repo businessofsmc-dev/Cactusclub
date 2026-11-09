@@ -1,5 +1,5 @@
 import React from 'react';
-import { DollarSign, CheckCircle2, Info, X } from 'lucide-react';
+import { DollarSign, CheckCircle2, Info, X, AlertCircle } from 'lucide-react';
 import type { ToastMessage } from '../types/crm';
 
 interface ToastProps {
@@ -22,6 +22,10 @@ export const ToastContainer: React.FC<ToastProps> = ({ toasts, onDismiss }) => {
           ) : toast.type === 'success' ? (
             <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center flex-shrink-0">
               <CheckCircle2 className="w-4 h-4" />
+            </div>
+          ) : toast.type === 'error' ? (
+            <div className="w-8 h-8 rounded-full bg-rose-500/20 text-rose-500 flex items-center justify-center flex-shrink-0">
+              <AlertCircle className="w-4 h-4" />
             </div>
           ) : (
             <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center flex-shrink-0">
