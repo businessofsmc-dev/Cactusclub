@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, 
   Search, 
@@ -15,7 +15,8 @@ import {
   Play,
   Hash,
   ArrowRight,
-  Tag as TagIcon
+  Tag as TagIcon,
+  UploadCloud
 } from 'lucide-react';
 import type { CannedScript, ScriptMediaTag } from '../types/crm';
 import { CANNED_SCRIPTS } from '../data/mockData';
@@ -172,6 +173,13 @@ export const ScriptsModal: React.FC<ScriptsModalProps> = ({
   const [tagPrice, setTagPrice] = useState<string>('15.00');
   const [tagTitle, setTagTitle] = useState('');
 
+  // Media upload states
+  const [tagMediaSourceTab, setTagMediaSourceTab] = useState<'upload' | 'url' | 'presets'>('upload');
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
+  const [uploadedFileSize, setUploadedFileSize] = useState<string | null>(null);
+  const tagFileInputRef = useRef<HTMLInputElement>(null);
+
   const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -231,13 +239,101 @@ export const ScriptsModal: React.FC<ScriptsModalProps> = ({
     sounds.playReceive();
   };
 
-  const handleAddMediaTagToScript = () => {
-    if (!tagName.trim()) {
-      setFormError('Veuillez renseigner le nom du tag (ex: douche_video, lingerie_dentelle).');
+  const handleProcessUploadedFile = (file: File) => {
+    if (!file) return;
+
+    if (file.size > 40 * 1024 * 1024) {
+      setFormError('Le fichier est trop volumineux (maximum 40 Mo).');
       return;
     }
+
+    const isVideo = file.type.startsWith('video');
+    const isImage = file.type.startsWith('image');
+
+    if (!isVideo && !isImage) {
+      setFormError('Format non supporté. Veuillez choisir une image ou une vidéo.');
+      return;
+    }
+
+    const detectedType = isVideo ? 'video' : 'photo';
+    setTagMediaType(detectedType);
+    setUploadedFileName(file.name);
+
+    const formattedSize = file.size > 1024 * 1024
+      ? `${(file.size / (1024 * 1024)).toFixed(1)} Mo`
+      : `${Math.round(file.size / 1024)} Ko`;
+    setUploadedFileSize(formattedSize);
+
+    if (!tagName.trim()) {
+      const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+      const cleanSlug = baseName
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_+|_+$/g, '');
+      if (cleanSlug) {
+        setTagName(cleanSlug);
+      }
+    }
+
+    if (!tagTitle.trim()) {
+      const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+      setTagTitle(baseName.replace(/[_-]/g, ' '));
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setTagUrl(reader.result);
+        setFormError(null);
+        sounds.playReceive();
+      }
+    };
+    reader.onerror = () => {
+      setFormError('Erreur de lecture du fichier.');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleProcessUploadedFile(file);
+    }
+  };
+
+  const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingFile(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      handleProcessUploadedFile(file);
+    }
+  };
+
+  const handleFileDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isDraggingFile) {
+      setIsDraggingFile(true);
+    }
+  };
+
+  const handleFileDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingFile(false);
+  };
+
+  const handleAddMediaTagToScript = () => {
     if (!tagUrl.trim()) {
-      setFormError('Veuillez renseigner une URL de photo ou vidéo pour ce tag.');
+      setFormError('Veuillez uploader une photo/vidéo ou spécifier une URL pour ce tag.');
+      return;
+    }
+    if (!tagName.trim()) {
+      setFormError('Veuillez renseigner le nom du tag (ex: douche_video, lingerie_dentelle).');
       return;
     }
 
@@ -265,6 +361,11 @@ export const ScriptsModal: React.FC<ScriptsModalProps> = ({
     setTagUrl('');
     setTagPrice('15.00');
     setTagTitle('');
+    setUploadedFileName(null);
+    setUploadedFileSize(null);
+    if (tagFileInputRef.current) {
+      tagFileInputRef.current.value = '';
+    }
     setFormError(null);
   };
 
@@ -566,28 +667,169 @@ export const ScriptsModal: React.FC<ScriptsModalProps> = ({
 
                 {/* Sub-form to add a new Media Tag */}
                 <div className="p-3.5 rounded-xl bg-white dark:bg-[#131624] border border-gray-200 dark:border-[#22283d] space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-gray-900 dark:text-white flex items-center space-x-1">
-                      <span>+ Ajouter un Tag avec Photo ou Vidéo & Prix</span>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <span className="text-xs font-bold text-gray-900 dark:text-white flex items-center space-x-1.5">
+                      <TagIcon className="w-3.5 h-3.5 text-blue-500" />
+                      <span>Ajouter un Tag avec Photo ou Vidéo & Prix</span>
                     </span>
 
-                    {/* Quick Presets Dropdown / Buttons */}
-                    <div className="flex items-center space-x-1 overflow-x-auto no-scrollbar max-w-xs sm:max-w-md">
-                      <span className="text-[10px] text-gray-400 flex-shrink-0">Presets :</span>
-                      {PRESET_MEDIA_TAGS.slice(0, 3).map((p, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => handleSelectPresetTag(p)}
-                          className="px-2 py-0.5 rounded-md bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 text-[10px] font-bold font-mono transition-colors flex-shrink-0 cursor-pointer"
-                        >
-                          #{p.name} (${p.price})
-                        </button>
-                      ))}
+                    {/* Source tabs */}
+                    <div className="flex items-center gap-1 p-0.5 rounded-lg bg-gray-100 dark:bg-[#1a2033] border border-gray-200 dark:border-[#2b3550]">
+                      <button
+                        type="button"
+                        onClick={() => setTagMediaSourceTab('upload')}
+                        className={`px-2.5 py-1 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                          tagMediaSourceTab === 'upload'
+                            ? 'bg-blue-600 text-white shadow-2xs'
+                            : 'text-gray-600 dark:text-gray-400 hover:text-blue-500'
+                        }`}
+                      >
+                        📁 Upload Fichier
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTagMediaSourceTab('url')}
+                        className={`px-2.5 py-1 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                          tagMediaSourceTab === 'url'
+                            ? 'bg-blue-600 text-white shadow-2xs'
+                            : 'text-gray-600 dark:text-gray-400 hover:text-blue-500'
+                        }`}
+                      >
+                        🔗 URL
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTagMediaSourceTab('presets')}
+                        className={`px-2.5 py-1 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                          tagMediaSourceTab === 'presets'
+                            ? 'bg-blue-600 text-white shadow-2xs'
+                            : 'text-gray-600 dark:text-gray-400 hover:text-blue-500'
+                        }`}
+                      >
+                        ✨ Presets
+                      </button>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                  {/* Hidden file input */}
+                  <input
+                    ref={tagFileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime,image/*,video/*"
+                    onChange={handleFileInputChange}
+                    className="hidden"
+                  />
+
+                  {/* Source Views */}
+                  {tagMediaSourceTab === 'upload' && (
+                    <div>
+                      {!tagUrl ? (
+                        <div
+                          onDragOver={handleFileDragOver}
+                          onDragLeave={handleFileDragLeave}
+                          onDrop={handleFileDrop}
+                          onClick={() => tagFileInputRef.current?.click()}
+                          className={`p-4 rounded-xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center text-center ${
+                            isDraggingFile
+                              ? 'border-blue-500 bg-blue-500/10'
+                              : 'border-blue-500/30 hover:border-blue-500 bg-gray-50/50 dark:bg-[#181d2e]/50'
+                          }`}
+                        >
+                          <UploadCloud className="w-6 h-6 text-blue-500 mb-1" />
+                          <span className="text-xs font-bold text-gray-900 dark:text-white">
+                            Glissez-déposez une photo ou vidéo ici
+                          </span>
+                          <span className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
+                            ou <strong className="text-blue-600 dark:text-blue-400 underline">cliquez pour sélectionner</strong> (Max 40 Mo)
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-[#181d2e] border border-blue-500/30 flex items-center justify-between gap-2">
+                          <div className="flex items-center space-x-2.5 min-w-0">
+                            <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-black flex-shrink-0">
+                              {tagMediaType === 'video' ? (
+                                <video src={tagUrl} className="w-full h-full object-cover" muted />
+                              ) : (
+                                <img src={tagUrl} alt="Aperçu" className="w-full h-full object-cover" />
+                              )}
+                              <span className="absolute top-0.5 left-0.5 px-1 py-0.2 rounded text-[8px] font-black bg-black/80 text-white">
+                                {tagMediaType === 'video' ? '🎬 VIDÉO' : '📸 PHOTO'}
+                              </span>
+                            </div>
+                            <div className="min-w-0">
+                              <span className="text-xs font-bold text-gray-900 dark:text-white block truncate">
+                                {uploadedFileName || 'Fichier média local'}
+                              </span>
+                              {uploadedFileSize && (
+                                <span className="text-[10px] text-blue-500 font-mono font-semibold">
+                                  {uploadedFileSize} • Prêt
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center space-x-1 flex-shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => tagFileInputRef.current?.click()}
+                              className="px-2 py-1 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-[10px] font-bold cursor-pointer"
+                            >
+                              Changer
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setTagUrl('');
+                                setUploadedFileName(null);
+                                setUploadedFileSize(null);
+                                if (tagFileInputRef.current) tagFileInputRef.current.value = '';
+                              }}
+                              className="p-1 rounded-lg text-rose-500 hover:bg-rose-500/10 cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {tagMediaSourceTab === 'url' && (
+                    <div>
+                      <input
+                        type="text"
+                        value={tagUrl}
+                        onChange={(e) => {
+                          setTagUrl(e.target.value);
+                          setUploadedFileName(null);
+                        }}
+                        placeholder="Collez l'URL de la photo ou vidéo (https://...)"
+                        className="w-full px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-[#1a2033] border border-gray-200 dark:border-[#2b3550] text-xs text-gray-900 dark:text-white font-mono outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                    </div>
+                  )}
+
+                  {tagMediaSourceTab === 'presets' && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {PRESET_MEDIA_TAGS.map((p, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            handleSelectPresetTag(p);
+                            setUploadedFileName(p.title || p.name);
+                          }}
+                          className="px-2 py-1 rounded-md bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 text-[10px] font-bold font-mono transition-colors flex items-center space-x-1 cursor-pointer"
+                        >
+                          <span>#{p.name}</span>
+                          <span>{p.type === 'video' ? '🎬' : '📸'}</span>
+                          <span className="text-amber-500">${p.price}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-1">
                     {/* Tag Name (Col 4) */}
                     <div className="sm:col-span-4">
                       <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-400 mb-1">
@@ -598,7 +840,7 @@ export const ScriptsModal: React.FC<ScriptsModalProps> = ({
                         <input
                           type="text"
                           value={tagName}
-                          onChange={(e) => setTagName(e.target.value)}
+                          onChange={(e) => setTagName(e.target.value.replace(/^#/, ''))}
                           placeholder="douche_video"
                           className="w-full pl-6 pr-2.5 py-1.5 rounded-lg bg-gray-50 dark:bg-[#1a2033] border border-gray-200 dark:border-[#2b3550] text-xs text-gray-900 dark:text-white font-mono outline-none focus:ring-1 focus:ring-blue-500"
                         />
@@ -666,17 +908,6 @@ export const ScriptsModal: React.FC<ScriptsModalProps> = ({
                         <span>Ajouter</span>
                       </button>
                     </div>
-                  </div>
-
-                  {/* Media URL Input */}
-                  <div>
-                    <input
-                      type="text"
-                      value={tagUrl}
-                      onChange={(e) => setTagUrl(e.target.value)}
-                      placeholder="Collez l'URL de la photo ou vidéo (ou cliquez sur un preset ci-dessus)..."
-                      className="w-full px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-[#1a2033] border border-gray-200 dark:border-[#2b3550] text-xs text-gray-900 dark:text-white font-mono outline-none focus:ring-1 focus:ring-blue-500"
-                    />
                   </div>
                 </div>
               </div>
