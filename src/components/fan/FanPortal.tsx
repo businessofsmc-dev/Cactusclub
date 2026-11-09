@@ -19,6 +19,7 @@ import { FanChatView } from './FanChatView';
 import { FanAuthModal } from './FanAuthModal';
 import { FanSubscribeModal } from './FanSubscribeModal';
 import { FanTipModal } from './FanTipModal';
+import { FanWalletModal } from './FanWalletModal';
 
 interface FanPortalProps {
   creator: CreatorAccount;
@@ -32,6 +33,7 @@ interface FanPortalProps {
   onUpdateFanUser?: (user: FanUser) => void;
   onNavigateToOperator: () => void;
   onNavigateToAdmin: () => void;
+  onNavigateToLogin?: () => void;
   onOpenLightbox: (url: string, title?: string, price?: number) => void;
   darkMode: boolean;
   onToggleDarkMode: () => void;
@@ -49,6 +51,7 @@ export const FanPortal: React.FC<FanPortalProps> = ({
   onUpdateFanUser,
   onNavigateToOperator,
   onNavigateToAdmin,
+  onNavigateToLogin,
   onOpenLightbox,
   darkMode,
   onToggleDarkMode,
@@ -60,6 +63,7 @@ export const FanPortal: React.FC<FanPortalProps> = ({
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isSubOpen, setIsSubOpen] = useState(false);
   const [isTipOpen, setIsTipOpen] = useState(false);
+  const [isWalletOpen, setIsWalletOpen] = useState(false);
 
   // Toggle post like
   const handleLikePost = (postId: string) => {
@@ -131,18 +135,32 @@ export const FanPortal: React.FC<FanPortalProps> = ({
             >
               📊 Admin ↗
             </button>
+            {onNavigateToLogin && (
+              <button
+                onClick={onNavigateToLogin}
+                className="px-2.5 py-1 rounded-lg text-blue-500 hover:text-blue-700 dark:hover:text-blue-300 transition-colors cursor-pointer"
+              >
+                🔐 Page Connexion
+              </button>
+            )}
           </div>
         </div>
 
         {/* Fan Balance & User Controls */}
         <div className="flex items-center space-x-3">
           {/* Wallet Balance Pill */}
-          <div className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold font-mono-numbers">
+          <div
+            onClick={() => setIsWalletOpen(true)}
+            className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold font-mono-numbers cursor-pointer hover:bg-emerald-500/15 transition-colors"
+          >
             <Wallet className="w-3.5 h-3.5" />
             <span>${fanUser.walletBalance.toFixed(2)}</span>
             <button
-              onClick={() => onTopUpWallet(50)}
-              title="Ajouter $50 au solde"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsWalletOpen(true);
+              }}
+              title="Recharger mon solde"
               className="ml-1 p-0.5 rounded hover:bg-emerald-500/20 cursor-pointer text-emerald-500"
             >
               <Plus className="w-3 h-3" />
@@ -532,6 +550,13 @@ export const FanPortal: React.FC<FanPortalProps> = ({
         onClose={() => setIsTipOpen(false)}
         fanUser={fanUser}
         onSendTip={onSendTip}
+      />
+
+      <FanWalletModal
+        isOpen={isWalletOpen}
+        onClose={() => setIsWalletOpen(false)}
+        fanUser={fanUser}
+        onTopUp={onTopUpWallet}
       />
     </div>
   );

@@ -25,11 +25,12 @@ import {
 } from './data/mockData';
 import type { Fan, ChatMessage, CannedScript, ToastMessage, CreatorAccount, FanUser } from './types/crm';
 import { FanPortal } from './components/fan/FanPortal';
+import { FanLoginPage } from './components/fan/FanLoginPage';
 
-export type AppView = 'dashboard' | 'messages' | 'fan';
+export type AppView = 'dashboard' | 'messages' | 'fan' | 'login';
 
 const getViewFromLocation = (): AppView => {
-  if (typeof window === 'undefined') return 'fan';
+  if (typeof window === 'undefined') return 'login';
   const path = window.location.pathname.toLowerCase();
   const hash = window.location.hash.toLowerCase();
   if (path.startsWith('/admin') || path.startsWith('/dashboard') || hash.includes('/admin') || hash.includes('/dashboard')) {
@@ -38,12 +39,15 @@ const getViewFromLocation = (): AppView => {
   if (path.startsWith('/messages') || path.startsWith('/operator') || path.startsWith('/chat') || hash.includes('/messages') || hash.includes('/chat')) {
     return 'messages';
   }
-  // Default to Fan Portal for all visitors on / or /fan or /club:
-  return 'fan';
+  if (path.startsWith('/fan') || path.startsWith('/club') || hash.includes('/fan')) {
+    return 'fan';
+  }
+  // Default on root / or /login is the authentic OnlyFans Login / Welcome screen:
+  return 'login';
 };
 
 function DashboardApp() {
-  // Navigation View: 'dashboard' (Admin Overview), 'messages' (Messages Pro Live Chat) or 'fan' (Fan/Visitor Experience)
+  // Navigation View: 'login' (OnlyFans Auth Screen), 'fan' (Fan/Visitor Experience), 'messages' (Chatter Desk), 'dashboard' (Admin Overview)
   const [currentView, setCurrentView] = useState<AppView>(getViewFromLocation);
 
   // Synchronize URL and history when navigating
@@ -52,7 +56,8 @@ function DashboardApp() {
     let targetPath = '/';
     if (view === 'dashboard') targetPath = '/admin';
     else if (view === 'messages') targetPath = '/messages';
-    else targetPath = '/';
+    else if (view === 'fan') targetPath = '/fan';
+    else targetPath = '/login';
 
     if (window.location.pathname !== targetPath) {
       window.history.pushState({ view }, '', targetPath);
@@ -978,8 +983,8 @@ function DashboardApp() {
             />
           </div>
         </div>
-      ) : (
-        /* VIEW 3: FAN / VISITOR PORTAL */
+      ) : currentView === 'fan' ? (
+        /* VIEW 3: FAN / CREATOR PORTAL */
         <FanPortal
           creator={currentAccount}
           fanUser={fanUser}
@@ -992,9 +997,25 @@ function DashboardApp() {
           onUpdateFanUser={handleUpdateFanUser}
           onNavigateToOperator={() => navigateTo('messages')}
           onNavigateToAdmin={() => navigateTo('dashboard')}
+          onNavigateToLogin={() => navigateTo('login')}
           onOpenLightbox={(url: string, title?: string, price?: number) => setLightboxData({ isOpen: true, url, title, price })}
           darkMode={darkMode}
           onToggleDarkMode={() => setDarkMode(!darkMode)}
+        />
+      ) : (
+        /* VIEW 4: ONLYFANS AUTHENTICATION LANDING PAGE */
+        <FanLoginPage
+          onLoginSuccess={(user) => {
+            setFanUser(user);
+            addToast({
+              type: 'success',
+              title: `Bienvenue ${user.name} !`,
+              description: `Votre solde de $${user.walletBalance.toFixed(2)} est disponible pour vos achats.`,
+            });
+            navigateTo('fan');
+          }}
+          onNavigateToOperator={() => navigateTo('messages')}
+          onNavigateToAdmin={() => navigateTo('dashboard')}
         />
       )}
 
