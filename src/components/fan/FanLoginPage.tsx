@@ -11,8 +11,6 @@ interface FanLoginPageProps {
 
 export const FanLoginPage: React.FC<FanLoginPageProps> = ({
   onLoginSuccess,
-  onNavigateToOperator,
-  onNavigateToAdmin,
 }) => {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
@@ -82,25 +80,6 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
           </svg>
         </div>
 
-        {/* Agency Quick Navigation in top left */}
-        <div className="absolute top-6 left-8 flex items-center space-x-2 z-20">
-          {onNavigateToOperator && (
-            <button
-              onClick={onNavigateToOperator}
-              className="px-3 py-1.5 rounded-full bg-white/15 hover:bg-white/25 text-white text-xs font-semibold backdrop-blur-xs transition-colors cursor-pointer"
-            >
-              💬 Console Chatter
-            </button>
-          )}
-          {onNavigateToAdmin && (
-            <button
-              onClick={onNavigateToAdmin}
-              className="px-3 py-1.5 rounded-full bg-white/15 hover:bg-white/25 text-white text-xs font-semibold backdrop-blur-xs transition-colors cursor-pointer"
-            >
-              📊 Dashboard Admin
-            </button>
-          )}
-        </div>
 
         {/* Brand Content */}
         <div className="relative z-10 max-w-lg">
