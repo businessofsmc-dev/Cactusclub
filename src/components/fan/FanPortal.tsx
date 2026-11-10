@@ -32,6 +32,7 @@ import { FanTipModal } from './FanTipModal';
 import { FanWalletModal } from './FanWalletModal';
 import { FanCommentsModal } from './FanCommentsModal';
 import { FanShopView } from './FanShopView';
+import { FanVerificationModal } from './FanVerificationModal';
 import { INITIAL_SHOP_ITEMS } from '../../data/shopData';
 
 interface FanPortalProps {
@@ -81,6 +82,7 @@ export const FanPortal: React.FC<FanPortalProps> = ({
   const [isSubOpen, setIsSubOpen] = useState(false);
   const [isTipOpen, setIsTipOpen] = useState(false);
   const [isWalletOpen, setIsWalletOpen] = useState(false);
+  const [isVerificationOpen, setIsVerificationOpen] = useState(false);
   const [commentingPost, setCommentingPost] = useState<CreatorPost | null>(null);
 
   // Active creator state with reactive external synchronization
@@ -171,14 +173,21 @@ export const FanPortal: React.FC<FanPortalProps> = ({
     );
   };
 
-  // Select creator and initiate chat or prompt subscription
+  // Select creator and initiate chat (triggers 2FA + ID + Banking verification when chatting with models)
   const handleStartChatWithCreator = (creatorId: string) => {
     setSelectedCreatorId(creatorId);
     if (onSelectCreator) {
       onSelectCreator(creatorId);
     }
 
-    // When deciding to write to a creator: if not subscribed and no plan active, prompt subscription
+    // 1. Require 2FA & ID verification + Banking info when deciding to chat with a model
+    if (!fanUser.isVerified || !fanUser.hasPaymentMethod) {
+      setIsVerificationOpen(true);
+      sounds.playReceive();
+      return;
+    }
+
+    // 2. When deciding to write to a creator: if not subscribed and no plan active, prompt subscription
     if (!fanUser.isSubscribed && fanUser.subscriptionTier !== 'free') {
       setIsSubOpen(true);
       sounds.playReceive();
@@ -247,7 +256,14 @@ export const FanPortal: React.FC<FanPortalProps> = ({
               ) : fanUser.isSubscribed ? (
                 <span className="px-1.5 py-0.2 rounded-full bg-pink-500 text-white font-black text-[9px]">VIP</span>
               ) : (
-                <span className="px-1.5 py-0.2 rounded-full bg-gray-400 text-white font-bold text-[9px]">Fan</span>
+                <button
+                  onClick={() => setIsVerificationOpen(true)}
+                  title="Vérifier mon identité 2FA & obtenir le badge Super Fan"
+                  className="px-2 py-0.5 rounded-full bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold text-[9px] flex items-center space-x-1 cursor-pointer transition-colors"
+                >
+                  <Star className="w-2.5 h-2.5" />
+                  <span>Devenir Super Fan</span>
+                </button>
               )}
               <div className="relative">
                 <img
@@ -1309,6 +1325,22 @@ export const FanPortal: React.FC<FanPortalProps> = ({
               p.id === postId ? { ...p, commentsCount: p.commentsCount + 1 } : p
             )
           );
+        }}
+      />
+
+      <FanVerificationModal
+        isOpen={isVerificationOpen}
+        onClose={() => setIsVerificationOpen(false)}
+        fanUser={fanUser}
+        creator={activeCreator}
+        onVerificationComplete={(updatedUser, topUpAmount) => {
+          const nextBalance = fanUser.walletBalance + topUpAmount;
+          onUpdateFanUser?.({
+            ...updatedUser,
+            walletBalance: nextBalance,
+          });
+          setIsVerificationOpen(false);
+          setActiveTab('chat');
         }}
       />
     </div>
