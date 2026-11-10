@@ -176,8 +176,9 @@ export const FanSubscribeModal: React.FC<FanSubscribeModalProps> = ({
                         {p.name}
                       </span>
                       {p.isFree && (
-                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
-                          ✓ Sans carte bancaire requise
+                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center space-x-1">
+                          <Check className="w-3 h-3" />
+                          <span>Sans carte bancaire requise</span>
                         </span>
                       )}
                     </div>
@@ -208,8 +209,9 @@ export const FanSubscribeModal: React.FC<FanSubscribeModalProps> = ({
             </h4>
             <div className="grid grid-cols-2 gap-2 pt-1 text-[11px]">
               <div className="p-2.5 rounded-xl bg-white dark:bg-[#131624] border border-gray-200/70 dark:border-[#262c42]">
-                <span className="font-bold text-emerald-600 dark:text-emerald-400 block mb-1">
-                  🎁 Plan Gratuit
+                <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center space-x-1 mb-1">
+                  <Gift className="w-3.5 h-3.5" />
+                  <span>Plan Gratuit</span>
                 </span>
                 <p className="text-gray-500 leading-snug">
                   • 3 messages d'essai offerts<br />
@@ -219,8 +221,9 @@ export const FanSubscribeModal: React.FC<FanSubscribeModalProps> = ({
               </div>
 
               <div className="p-2.5 rounded-xl bg-white dark:bg-[#131624] border border-pink-500/40">
-                <span className="font-bold text-pink-600 dark:text-pink-400 block mb-1">
-                  ⭐ VIP Premium
+                <span className="font-bold text-pink-600 dark:text-pink-400 flex items-center space-x-1 mb-1">
+                  <Crown className="w-3.5 h-3.5" />
+                  <span>VIP Premium</span>
                 </span>
                 <p className="text-gray-500 leading-snug">
                   • Messages illimités 24/7<br />

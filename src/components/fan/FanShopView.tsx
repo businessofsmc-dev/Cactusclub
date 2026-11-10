@@ -10,7 +10,12 @@ import {
   X, 
   Plus, 
   Eye, 
-  Wallet
+  Wallet,
+  Sparkles,
+  Heart,
+  Gem,
+  Flame,
+  Award
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { sounds } from '../../utils/sound';
@@ -128,6 +133,18 @@ export const FanShopView: React.FC<FanShopViewProps> = ({
         <div className="flex items-center space-x-2 overflow-x-auto no-scrollbar py-1">
           {SHOP_CATEGORIES.map((cat) => {
             const isActive = selectedCategory === cat.id;
+            const CategoryIcon =
+              cat.id === 'all'
+                ? Sparkles
+                : cat.id === 'lingerie'
+                ? Heart
+                : cat.id === 'shoes'
+                ? Gem
+                : cat.id === 'bdsm'
+                ? Lock
+                : cat.id === 'sextoys'
+                ? Flame
+                : Award;
             return (
               <button
                 key={cat.id}
@@ -141,7 +158,7 @@ export const FanShopView: React.FC<FanShopViewProps> = ({
                     : 'bg-white dark:bg-[#131624] text-gray-700 dark:text-gray-300 border border-gray-200/90 dark:border-[#1e2338] hover:border-pink-400'
                 }`}
               >
-                <span>{cat.icon}</span>
+                <CategoryIcon className="w-3.5 h-3.5" />
                 <span>{cat.label}</span>
               </button>
             );

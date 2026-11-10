@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Send, 
-  Smile, 
   Lock, 
   Unlock, 
   Heart, 
@@ -10,12 +9,13 @@ import {
   Sparkles, 
   ShieldCheck, 
   Check,
-  Crown
+  Crown,
+  MessageCircle,
+  ArrowUpRight
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { sounds } from '../../utils/sound';
 import type { ChatMessage, FanUser, CreatorAccount } from '../../types/crm';
-import { FREQUENT_EMOJIS } from '../../data/mockData';
 
 interface FanChatViewProps {
   creator: CreatorAccount;
@@ -44,7 +44,6 @@ export const FanChatView: React.FC<FanChatViewProps> = ({
   onOpenSubscribeModal,
 }) => {
   const [inputText, setInputText] = useState('');
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -184,7 +183,7 @@ export const FanChatView: React.FC<FanChatViewProps> = ({
                     <span className="absolute -bottom-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                   </div>
                   <span>{c.name.split(' ')[0]}</span>
-                  {isCurrent && <span className="text-[10px]">💬</span>}
+                  {isCurrent && <MessageCircle className="w-3 h-3 text-white" />}
                 </button>
               );
             })}
@@ -231,7 +230,8 @@ export const FanChatView: React.FC<FanChatViewProps> = ({
               className="text-[11px] font-bold text-pink-600 dark:text-pink-400 hover:underline flex items-center space-x-1 cursor-pointer"
             >
               <Crown className="w-3.5 h-3.5" />
-              <span>Passer en VIP Illimité ($9.99) ↗</span>
+              <span>Passer en VIP Illimité ($9.99)</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
             </button>
           </div>
         ) : null}
@@ -369,35 +369,9 @@ export const FanChatView: React.FC<FanChatViewProps> = ({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Emoji Picker Bar */}
-      {showEmojiPicker && (
-        <div className="px-4 py-2 bg-white dark:bg-[#151926] border-t border-gray-200 dark:border-[#22273b] flex items-center space-x-1 overflow-x-auto">
-          {FREQUENT_EMOJIS.map((emoji) => (
-            <button
-              key={emoji}
-              onClick={() => {
-                setInputText((prev) => prev + emoji);
-                setShowEmojiPicker(false);
-              }}
-              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-lg cursor-pointer transition-transform hover:scale-120"
-            >
-              {emoji}
-            </button>
-          ))}
-        </div>
-      )}
-
       {/* Message Input Bottom Bar */}
       <div className="p-4 bg-white dark:bg-[#151926] border-t border-gray-200 dark:border-[#22273b]">
         <form onSubmit={handleSend} className="flex items-center space-x-2">
-          <button
-            type="button"
-            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            className="p-2 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
-          >
-            <Smile className="w-5 h-5" />
-          </button>
-
           <button
             type="button"
             onClick={onOpenTipModal}

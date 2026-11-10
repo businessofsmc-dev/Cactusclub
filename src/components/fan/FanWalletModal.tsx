@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Wallet, Plus, ShieldCheck, Sparkles } from 'lucide-react';
+import { X, Wallet, Plus, ShieldCheck, Sparkles, CreditCard, Smartphone, Zap } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { sounds } from '../../utils/sound';
 import type { FanUser } from '../../types/crm';
@@ -134,11 +134,12 @@ export const FanWalletModal: React.FC<FanWalletModalProps> = ({
             </label>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { id: 'card' as const, label: 'Carte Bancaire', icon: '💳' },
-                { id: 'apple' as const, label: 'Apple Pay', icon: '🍏' },
-                { id: 'crypto' as const, label: 'Crypto (USDT)', icon: '⚡' },
+                { id: 'card' as const, label: 'Carte Bancaire', Icon: CreditCard },
+                { id: 'apple' as const, label: 'Apple Pay', Icon: Smartphone },
+                { id: 'crypto' as const, label: 'Crypto (USDT)', Icon: Zap },
               ].map((m) => {
                 const isSelected = paymentMethod === m.id;
+                const MethodIcon = m.Icon;
                 return (
                   <button
                     key={m.id}
@@ -150,7 +151,7 @@ export const FanWalletModal: React.FC<FanWalletModalProps> = ({
                         : 'border-gray-200 dark:border-[#262d42] text-gray-600 dark:text-gray-400'
                     }`}
                   >
-                    <span className="text-base">{m.icon}</span>
+                    <MethodIcon className="w-4 h-4" />
                     <span className="text-[11px] truncate max-w-full">{m.label}</span>
                   </button>
                 );

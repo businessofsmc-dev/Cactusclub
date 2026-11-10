@@ -14,7 +14,11 @@ import {
   FileText,
   CheckCircle2,
   Smartphone,
-  KeyRound
+  KeyRound,
+  CreditCard,
+  Globe,
+  Car,
+  ShieldAlert
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { sounds } from '../../utils/sound';
@@ -147,16 +151,9 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
     }
   };
 
-  const handleUseDemoIdSpecimen = () => {
-    setDocFileName(`${docType.toUpperCase()}_Specimen_Officiel_18Plus.pdf`);
-    setDocFileUrl('https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=400&q=80');
-    setVerificationError(null);
-    sounds.playReceive();
-  };
-
   const handleSend2FACode = () => {
     setTwoFactorSent(true);
-    setTwoFactorCode('742819'); // Preload code for smooth instant 1-click test
+    setTwoFactorCode('742819');
     sounds.playReceive();
   };
 
@@ -230,7 +227,7 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
   const handleFinalizeWithVerification = (asVerified: boolean) => {
     if (asVerified) {
       if (!docFileUrl && !docFileName) {
-        setVerificationError('Veuillez téléverser votre pièce d’identité ou utiliser un spécimen de test.');
+        setVerificationError('Veuillez téléverser votre pièce d’identité officielle.');
         return;
       }
       if (!twoFactorCode.trim()) {
@@ -278,9 +275,9 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
     onLoginSuccess(finalUser);
   };
 
-  const handleQuickDemo = () => {
-    const demoUser: FanUser = {
-      id: 'fan-demo-valentin',
+  const handleGoogleAuth = () => {
+    const googleUser: FanUser = {
+      id: 'fan-google-valentin',
       name: 'Valentin Robert',
       firstName: 'Valentin',
       lastName: 'Robert',
@@ -300,7 +297,7 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
     };
 
     sounds.playCash();
-    onLoginSuccess(demoUser);
+    onLoginSuccess(googleUser);
   };
 
   const isRegisterStep2Valid =
@@ -352,27 +349,36 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
           {/* Value proposition badges */}
           <div className="space-y-3.5 text-white/95 text-sm font-medium">
             <div className="flex items-center space-x-2.5">
-              <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">✓</span>
+              <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
+                <Check className="w-3 h-3 text-white stroke-[3]" />
+              </span>
               <span>Accès direct et illimité aux publications exclusives</span>
             </div>
             <div className="flex items-center space-x-2.5">
-              <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">✓</span>
+              <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
+                <Check className="w-3 h-3 text-white stroke-[3]" />
+              </span>
               <span>Discussions privées 1-à-1 et mémos vocaux en direct</span>
             </div>
             <div className="flex items-center space-x-2.5">
-              <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">✓</span>
+              <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
+                <Check className="w-3 h-3 text-white stroke-[3]" />
+              </span>
               <span>Plateforme certifiée +18 ans & discrétion bancaire absolue</span>
             </div>
             <div className="flex items-center space-x-2.5">
-              <span className="w-5 h-5 rounded-full bg-amber-400/30 text-amber-200 flex items-center justify-center text-xs font-bold">⭐</span>
+              <span className="w-5 h-5 rounded-full bg-amber-400/30 text-amber-200 flex items-center justify-center">
+                <Star className="w-3 h-3 fill-amber-200 text-amber-200" />
+              </span>
               <span>Badge Super Fan certifié par vérification 2FA & pièce d’identité</span>
             </div>
           </div>
 
           {/* 18+ Legal Compliance Banner on Left */}
           <div className="mt-8 p-3 rounded-2xl bg-black/20 border border-white/20 backdrop-blur-xs flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center font-black text-xs text-white border border-white/30 flex-shrink-0">
-              🔞 18+
+            <div className="px-2.5 h-9 rounded-xl bg-white/15 flex items-center justify-center space-x-1 font-black text-xs text-white border border-white/30 flex-shrink-0">
+              <ShieldAlert className="w-4 h-4 text-white" />
+              <span>18+</span>
             </div>
             <div className="text-xs text-white/90 leading-snug">
               <span className="font-bold block">Réservé exclusivement aux adultes</span>
@@ -492,7 +498,7 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
               <div className="space-y-3">
                 <button
                   type="button"
-                  onClick={handleQuickDemo}
+                  onClick={handleGoogleAuth}
                   className="w-full flex items-center justify-center relative py-3 px-4 rounded-full bg-[#4285F4] hover:bg-[#3367d6] text-white text-xs font-black uppercase tracking-wider transition-all shadow-sm active:scale-98 cursor-pointer"
                 >
                   <div className="absolute left-2 w-7 h-7 rounded-full bg-white flex items-center justify-center shadow-xs">
@@ -517,17 +523,6 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
                   </div>
                   <span>Se connecter avec Google</span>
                 </button>
-
-                <div className="pt-1">
-                  <button
-                    type="button"
-                    onClick={handleQuickDemo}
-                    className="w-full py-2.5 px-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-xs font-bold transition-all flex items-center justify-center space-x-2 cursor-pointer shadow-xs"
-                  >
-                    <Sparkles className="w-4 h-4 text-emerald-500" />
-                    <span>Connexion VIP Démo ($150 de solde préchargé)</span>
-                  </button>
-                </div>
               </div>
             </div>
           ) : registerStep === 'credentials' ? (
@@ -625,7 +620,7 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
               <div className="space-y-3">
                 <button
                   type="button"
-                  onClick={handleQuickDemo}
+                  onClick={handleGoogleAuth}
                   className="w-full flex items-center justify-center relative py-3 px-4 rounded-full bg-[#4285F4] hover:bg-[#3367d6] text-white text-xs font-black uppercase tracking-wider transition-all shadow-sm active:scale-98 cursor-pointer"
                 >
                   <div className="absolute left-2 w-7 h-7 rounded-full bg-white flex items-center justify-center shadow-xs">
@@ -650,17 +645,6 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
                   </div>
                   <span>S'inscrire avec Google</span>
                 </button>
-
-                <div className="pt-1">
-                  <button
-                    type="button"
-                    onClick={handleQuickDemo}
-                    className="w-full py-2.5 px-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-xs font-bold transition-all flex items-center justify-center space-x-2 cursor-pointer shadow-xs"
-                  >
-                    <Sparkles className="w-4 h-4 text-emerald-500" />
-                    <span>Connexion VIP Démo ($150 de solde préchargé)</span>
-                  </button>
-                </div>
               </div>
             </div>
           ) : registerStep === 'profile' ? (
@@ -932,7 +916,7 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
                   Vérification 2FA & Pièce d'identité
                 </h2>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                  Faites vérifier votre identité pour obtenir le badge <strong>Super Fan ⭐</strong> officiel.
+                  Faites vérifier votre identité pour obtenir le badge <strong>Super Fan</strong> officiel.
                 </p>
               </div>
 
@@ -944,15 +928,21 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
                 </div>
                 <div className="space-y-1.5 text-[11px] text-gray-700 dark:text-gray-300">
                   <div className="flex items-center space-x-2">
-                    <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-[10px]">✓</span>
-                    <span><strong>Badge "Super Fan ⭐"</strong> affiché en direct auprès de Margot et des créateurs.</span>
+                    <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0">
+                      <Check className="w-2.5 h-2.5 stroke-[3]" />
+                    </span>
+                    <span><strong>Badge "Super Fan"</strong> affiché en direct auprès de Margot et des créateurs.</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-[10px]">✓</span>
+                    <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0">
+                      <Check className="w-2.5 h-2.5 stroke-[3]" />
+                    </span>
                     <span>Priorité haute dans la file de réponse des messages 1-à-1 et des lives.</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-[10px]">✓</span>
+                    <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0">
+                      <Check className="w-2.5 h-2.5 stroke-[3]" />
+                    </span>
                     <span>Protection biométrique & 2FA maximale contre l'usurpation de compte.</span>
                   </div>
                 </div>
@@ -966,27 +956,30 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
                   </label>
                   <div className="grid grid-cols-3 gap-2">
                     {[
-                      { id: 'cni', label: 'Carte d\'identité', icon: '🪪' },
-                      { id: 'passport', label: 'Passeport', icon: '🛂' },
-                      { id: 'driving_license', label: 'Permis de conduire', icon: '🚗' },
-                    ].map((tab) => (
-                      <button
-                        key={tab.id}
-                        type="button"
-                        onClick={() => {
-                          setDocType(tab.id as any);
-                          sounds.playReceive();
-                        }}
-                        className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
-                          docType === tab.id
-                            ? 'border-[#ec4899] bg-pink-500/10 text-pink-600 dark:text-pink-300 font-bold shadow-xs'
-                            : 'border-gray-200 dark:border-[#27304b] bg-gray-50 dark:bg-[#151926] text-gray-600 dark:text-gray-400 hover:border-gray-300'
-                        }`}
-                      >
-                        <div className="text-base mb-0.5">{tab.icon}</div>
-                        <div className="text-[10px] leading-tight truncate">{tab.label}</div>
-                      </button>
-                    ))}
+                      { id: 'cni', label: 'Carte d\'identité', Icon: CreditCard },
+                      { id: 'passport', label: 'Passeport', Icon: Globe },
+                      { id: 'driving_license', label: 'Permis de conduire', Icon: Car },
+                    ].map((tab) => {
+                      const TabIcon = tab.Icon;
+                      return (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => {
+                            setDocType(tab.id as any);
+                            sounds.playReceive();
+                          }}
+                          className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center ${
+                            docType === tab.id
+                              ? 'border-[#ec4899] bg-pink-500/10 text-pink-600 dark:text-pink-300 font-bold shadow-xs'
+                              : 'border-gray-200 dark:border-[#27304b] bg-gray-50 dark:bg-[#151926] text-gray-600 dark:text-gray-400 hover:border-gray-300'
+                          }`}
+                        >
+                          <TabIcon className="w-4 h-4 mb-1" />
+                          <div className="text-[10px] leading-tight truncate max-w-full">{tab.label}</div>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -1027,21 +1020,14 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
                       </button>
                     </div>
                   ) : (
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-1">
+                    <div className="flex items-center justify-center pt-1">
                       <button
                         type="button"
                         onClick={() => idFileInputRef.current?.click()}
-                        className="w-full sm:w-auto px-4 py-2 rounded-xl bg-white dark:bg-[#1f263d] border border-gray-300 dark:border-[#333f63] text-gray-800 dark:text-gray-200 font-bold text-xs hover:border-[#ec4899] transition-all cursor-pointer shadow-xs flex items-center justify-center space-x-1.5"
+                        className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-white dark:bg-[#1f263d] border border-gray-300 dark:border-[#333f63] text-gray-800 dark:text-gray-200 font-bold text-xs hover:border-[#ec4899] transition-all cursor-pointer shadow-xs flex items-center justify-center space-x-2"
                       >
                         <Upload className="w-3.5 h-3.5 text-[#ec4899]" />
-                        <span>Sélectionner le document</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleUseDemoIdSpecimen}
-                        className="w-full sm:w-auto px-3 py-2 rounded-xl bg-pink-500/10 hover:bg-pink-500/20 text-[#ec4899] font-bold text-xs transition-colors cursor-pointer"
-                      >
-                        ⚡ Utiliser spécimen démo
+                        <span>Sélectionner mon document officiel</span>
                       </button>
                     </div>
                   )}
@@ -1062,7 +1048,7 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
                       className="text-[10px] font-bold text-[#ec4899] hover:underline flex items-center space-x-1 cursor-pointer"
                     >
                       <Smartphone className="w-3 h-3" />
-                      <span>{twoFactorSent ? 'Code envoyé (742819)' : 'Simuler code 2FA'}</span>
+                      <span>{twoFactorSent ? 'Code envoyé' : 'Recevoir le code 2FA'}</span>
                     </button>
                   </div>
 
@@ -1099,7 +1085,7 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
                   className="w-full py-3.5 rounded-full text-xs font-black uppercase tracking-wider transition-all duration-200 cursor-pointer bg-gradient-to-r from-amber-500 via-[#ec4899] to-[#8b5cf6] hover:opacity-95 text-white shadow-lg shadow-pink-500/25 active:scale-98 flex items-center justify-center space-x-2"
                 >
                   <Star className="w-4 h-4 fill-white" />
-                  <span>Vérifier mon identité & Activer le Badge Super Fan ⭐</span>
+                  <span>Vérifier mon identité & Activer le Badge Super Fan</span>
                 </button>
 
                 {/* Skip / Secondary Action: Continue as Standard Member */}

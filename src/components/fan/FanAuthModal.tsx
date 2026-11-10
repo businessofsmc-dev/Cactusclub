@@ -39,23 +39,6 @@ export const FanAuthModal: React.FC<FanAuthModalProps> = ({
     onClose();
   };
 
-  const handleQuickDemo = () => {
-    const demoUser: FanUser = {
-      id: 'fan-demo-valentin',
-      name: 'Valentin',
-      username: '@valentin_vip',
-      email: 'valentin@fan.cactusclub',
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
-      walletBalance: 150.00,
-      isSubscribed: true,
-      subscriptionTier: 'monthly',
-      unlockedMediaIds: [],
-    };
-    sounds.playCash();
-    onAuthSuccess(demoUser);
-    onClose();
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md select-none animate-in fade-in">
       <div className="w-full max-w-md bg-white dark:bg-[#151926] rounded-3xl shadow-2xl border border-gray-200 dark:border-[#262c42] overflow-hidden flex flex-col">
@@ -78,17 +61,6 @@ export const FanAuthModal: React.FC<FanAuthModalProps> = ({
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             Rejoignez le club exclusif pour discuter avec Margot et débloquer ses contenus privés.
           </p>
-
-          {/* Quick Demo Access Pill */}
-          <div className="mt-4">
-            <button
-              onClick={handleQuickDemo}
-              className="w-full py-2.5 px-4 rounded-xl bg-blue-50 dark:bg-blue-500/15 border border-blue-200 dark:border-blue-500/30 text-blue-600 dark:text-blue-300 text-xs font-bold hover:bg-blue-100/70 dark:hover:bg-blue-500/25 transition-all flex items-center justify-center space-x-2 shadow-xs cursor-pointer"
-            >
-              <Sparkles className="w-4 h-4 text-blue-500" />
-              <span>Connexion Démo Immédiate (Solde 150 $ offert)</span>
-            </button>
-          </div>
         </div>
 
         {/* Tab Switcher */}
