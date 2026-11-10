@@ -18,7 +18,8 @@ import {
   CheckCircle2,
   Home,
   Layers,
-  ShoppingBag
+  ShoppingBag,
+  Star
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { sounds } from '../../utils/sound';
@@ -233,16 +234,33 @@ export const FanPortal: React.FC<FanPortalProps> = ({
           {fanUser.name ? (
             <div className="flex items-center space-x-2 p-1 pl-2 rounded-xl bg-gray-100 dark:bg-[#1a2033] text-xs">
               <span className="font-bold text-gray-800 dark:text-gray-200 hidden sm:inline">{fanUser.name}</span>
-              {fanUser.isSubscribed ? (
+              {fanUser.isSuperFan ? (
+                <span className="flex items-center space-x-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-pink-500 text-white font-black text-[9px] shadow-xs">
+                  <Star className="w-2.5 h-2.5 fill-white" />
+                  <span>Super Fan</span>
+                </span>
+              ) : fanUser.isVerified ? (
+                <span className="flex items-center space-x-0.5 px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30 font-bold text-[9px]">
+                  <CheckCircle2 className="w-2.5 h-2.5" />
+                  <span>Vérifié</span>
+                </span>
+              ) : fanUser.isSubscribed ? (
                 <span className="px-1.5 py-0.2 rounded-full bg-pink-500 text-white font-black text-[9px]">VIP</span>
               ) : (
                 <span className="px-1.5 py-0.2 rounded-full bg-gray-400 text-white font-bold text-[9px]">Fan</span>
               )}
-              <img
-                src={fanUser.avatar}
-                alt={fanUser.name}
-                className="w-6 h-6 rounded-full object-cover"
-              />
+              <div className="relative">
+                <img
+                  src={fanUser.avatar}
+                  alt={fanUser.name}
+                  className="w-6 h-6 rounded-full object-cover"
+                />
+                {fanUser.isSuperFan && (
+                  <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-amber-500 flex items-center justify-center text-[7px] text-white">
+                    ★
+                  </span>
+                )}
+              </div>
             </div>
           ) : (
             <button

@@ -152,6 +152,11 @@ export interface FanUser {
   unlockedMediaIds: string[];
   birthDate?: string;
   isOver18?: boolean;
+  isVerified?: boolean;
+  isSuperFan?: boolean;
+  idDocumentType?: 'cni' | 'passport' | 'driving_license';
+  idDocumentStatus?: 'verified' | 'pending' | 'none';
+  idDocumentFrontUrl?: string;
 }
 
 export interface CreatorPost {

@@ -9,7 +9,12 @@ import {
   Check,
   AlertCircle,
   ArrowLeft,
-  Upload
+  Upload,
+  Star,
+  FileText,
+  CheckCircle2,
+  Smartphone,
+  KeyRound
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { sounds } from '../../utils/sound';
@@ -43,8 +48,8 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
   // Login flow steps: 'email' -> 'password'
   const [loginStep, setLoginStep] = useState<'email' | 'password'>('email');
 
-  // Register flow steps: 'credentials' -> 'profile' (formulaire complet + règle 18+)
-  const [registerStep, setRegisterStep] = useState<'credentials' | 'profile'>('credentials');
+  // Register flow steps: 'credentials' -> 'profile' -> 'verification'
+  const [registerStep, setRegisterStep] = useState<'credentials' | 'profile' | 'verification'>('credentials');
 
   // Register Step 2: Formulaire complet du profil Fan
   const [firstName, setFirstName] = useState('');
@@ -56,7 +61,16 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
   const [isOver18Confirmed, setIsOver18Confirmed] = useState(false);
   const [ageError, setAgeError] = useState<string | null>(null);
 
+  // Register Step 3: Vérification d'identité 2FA & Pièce d'identité (Badge Super Fan / Vérifié)
+  const [docType, setDocType] = useState<'cni' | 'passport' | 'driving_license'>('cni');
+  const [docFileUrl, setDocFileUrl] = useState<string | null>(null);
+  const [docFileName, setDocFileName] = useState<string | null>(null);
+  const [twoFactorCode, setTwoFactorCode] = useState('');
+  const [twoFactorSent, setTwoFactorSent] = useState(false);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const idFileInputRef = useRef<HTMLInputElement>(null);
 
   // Age calculation helper (+18 requirement)
   const calculateAge = (dateString: string): number => {
@@ -113,6 +127,39 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
     }
   };
 
+  const handleIdDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 15 * 1024 * 1024) {
+        setVerificationError('Document trop lourd (15 Mo maximum).');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setDocFileUrl(event.target.result as string);
+          setDocFileName(file.name);
+          setVerificationError(null);
+          sounds.playReceive();
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleUseDemoIdSpecimen = () => {
+    setDocFileName(`${docType.toUpperCase()}_Specimen_Officiel_18Plus.pdf`);
+    setDocFileUrl('https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=400&q=80');
+    setVerificationError(null);
+    sounds.playReceive();
+  };
+
+  const handleSend2FACode = () => {
+    setTwoFactorSent(true);
+    setTwoFactorCode('742819'); // Preload code for smooth instant 1-click test
+    sounds.playReceive();
+  };
+
   // Submit Login
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -136,6 +183,8 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
       subscriptionTier: undefined,
       unlockedMediaIds: [],
       isOver18: true,
+      isVerified: true,
+      isSuperFan: true,
     };
 
     sounds.playCash();
@@ -147,17 +196,15 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
     e.preventDefault();
     if (!email.trim() || !password.trim()) return;
 
-    // Advance to Step 2: Complete profile form
     setRegisterStep('profile');
     sounds.playReceive();
   };
 
-  // Submit Register Step 2 (Finalize Profile + 18+ Verification)
+  // Submit Register Step 2 (Profile Form -> Step 3: Verification 2FA / Pièce d'identité)
   const handleRegisterProfileSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!firstName.trim() || !lastName.trim()) return;
 
-    // Validate 18+ age strictly
     if (!birthDate) {
       setAgeError('Veuillez renseigner votre date de naissance.');
       return;
@@ -174,7 +221,25 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
       return;
     }
 
-    const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+    // Advance to Step 3 : 2FA & ID verification for Super Fan badge
+    setRegisterStep('verification');
+    sounds.playReceive();
+  };
+
+  // Finalize Registration (With or without Super Fan badge)
+  const handleFinalizeWithVerification = (asVerified: boolean) => {
+    if (asVerified) {
+      if (!docFileUrl && !docFileName) {
+        setVerificationError('Veuillez téléverser votre pièce d’identité ou utiliser un spécimen de test.');
+        return;
+      }
+      if (!twoFactorCode.trim()) {
+        setVerificationError('Veuillez renseigner le code de sécurité 2FA reçu.');
+        return;
+      }
+    }
+
+    const fullName = `${firstName.trim()} ${lastName.trim()}`.trim() || email.split('@')[0];
     const cleanUsername = username.trim().startsWith('@')
       ? username.trim()
       : `@${(username.trim() || firstName.trim()).toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
@@ -187,20 +252,27 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
       username: cleanUsername,
       email: email.trim(),
       avatar: selectedAvatar,
-      walletBalance: 150.00, // Preloaded with $150 so user can purchase PPV & tips immediately!
+      walletBalance: 150.00,
       isSubscribed: false,
       subscriptionTier: undefined,
       unlockedMediaIds: [],
       birthDate,
       isOver18: true,
+      isVerified: asVerified,
+      isSuperFan: asVerified,
+      idDocumentType: asVerified ? docType : undefined,
+      idDocumentStatus: asVerified ? 'verified' : 'none',
+      idDocumentFrontUrl: docFileUrl || undefined,
     };
 
     sounds.playCash();
     confetti({
-      particleCount: 90,
-      spread: 75,
+      particleCount: asVerified ? 120 : 60,
+      spread: 80,
       origin: { y: 0.6, x: 0.5 },
-      colors: ['#ec4899', '#8b5cf6', '#d946ef', '#10b981'],
+      colors: asVerified
+        ? ['#f59e0b', '#ec4899', '#8b5cf6', '#10b981', '#3b82f6']
+        : ['#ec4899', '#8b5cf6'],
     });
 
     onLoginSuccess(finalUser);
@@ -219,7 +291,12 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
       isSubscribed: false,
       subscriptionTier: undefined,
       unlockedMediaIds: [],
+      birthDate: '1998-05-14',
       isOver18: true,
+      isVerified: true,
+      isSuperFan: true,
+      idDocumentType: 'passport',
+      idDocumentStatus: 'verified',
     };
 
     sounds.playCash();
@@ -267,12 +344,12 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
             </div>
           </div>
 
-          {/* Catchphrase in exact French wording */}
+          {/* Catchphrase */}
           <h1 className="text-4xl xl:text-5xl font-extrabold tracking-tight leading-tight text-white mb-6">
             Inscrivez-vous pour soutenir vos créateurs préférés
           </h1>
 
-          {/* Value proposition badges with +18 confirmation rule */}
+          {/* Value proposition badges */}
           <div className="space-y-3.5 text-white/95 text-sm font-medium">
             <div className="flex items-center space-x-2.5">
               <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">✓</span>
@@ -286,6 +363,10 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
               <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">✓</span>
               <span>Plateforme certifiée +18 ans & discrétion bancaire absolue</span>
             </div>
+            <div className="flex items-center space-x-2.5">
+              <span className="w-5 h-5 rounded-full bg-amber-400/30 text-amber-200 flex items-center justify-center text-xs font-bold">⭐</span>
+              <span>Badge Super Fan certifié par vérification 2FA & pièce d’identité</span>
+            </div>
           </div>
 
           {/* 18+ Legal Compliance Banner on Left */}
@@ -295,7 +376,7 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
             </div>
             <div className="text-xs text-white/90 leading-snug">
               <span className="font-bold block">Réservé exclusivement aux adultes</span>
-              Inscription subordonnée à la majorité légale (+18 ans).
+              Inscription subordonnée à la majorité légale (+18 ans) et authentification 2FA.
             </div>
           </div>
         </div>
@@ -314,7 +395,7 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
         </div>
 
         {/* Central Card Container */}
-        <div className="w-full max-w-[430px]">
+        <div className="w-full max-w-[440px]">
           {/* ======================================================= */}
           {/* MODE 1: LOGIN FLOW                                      */}
           {/* ======================================================= */}
@@ -456,7 +537,7 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
             <div className="animate-in fade-in duration-200">
               <div className="mb-5">
                 <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-pink-500/10 text-pink-600 dark:text-pink-400 text-[10px] font-black uppercase tracking-wider mb-2">
-                  <span>Étape 1 sur 2</span>
+                  <span>Étape 1 sur 3</span>
                   <span>•</span>
                   <span>Identifiants</span>
                 </div>
@@ -582,7 +663,7 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
                 </div>
               </div>
             </div>
-          ) : (
+          ) : registerStep === 'profile' ? (
             /* ======================================================= */
             /* MODE 2 - STEP 2 : COMPLETE PROFILE FORM + 18+ AGE RULE  */
             /* ======================================================= */
@@ -594,7 +675,7 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
                   setRegisterStep('credentials');
                   sounds.playReceive();
                 }}
-                className="flex items-center space-x-1.5 text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors mb-4 cursor-pointer"
+                className="flex items-center space-x-1.5 text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors mb-3 cursor-pointer"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 <span>Modifier mes identifiants</span>
@@ -602,7 +683,7 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
 
               <div className="mb-4">
                 <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-pink-500/10 text-pink-600 dark:text-pink-400 text-[10px] font-black uppercase tracking-wider mb-2">
-                  <span>Étape 2 sur 2</span>
+                  <span>Étape 2 sur 3</span>
                   <span>•</span>
                   <span>Profil & Vérification 18+</span>
                 </div>
@@ -743,9 +824,7 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
                   </div>
                 </div>
 
-                {/* =================================================== */}
-                {/* 18+ REQUIREMENT: DATE OF BIRTH & CERTIFICATION BOX  */}
-                {/* =================================================== */}
+                {/* 18+ REQUIREMENT: DATE OF BIRTH & CERTIFICATION BOX */}
                 <div className="p-3.5 rounded-2xl bg-amber-50/70 dark:bg-amber-950/25 border border-amber-300/80 dark:border-amber-800/50 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
@@ -763,19 +842,16 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
                     <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
                       Date de naissance <span className="text-rose-500">*</span>
                     </label>
-                    <div className="relative">
-                      <input
-                        type="date"
-                        required
-                        max={new Date().toISOString().split('T')[0]}
-                        value={birthDate}
-                        onChange={(e) => handleBirthDateChange(e.target.value)}
-                        className="w-full px-3.5 py-2 rounded-xl border border-gray-300 dark:border-[#27304b] bg-white dark:bg-[#151926] text-xs font-mono font-bold text-gray-900 dark:text-white outline-hidden focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
-                      />
-                    </div>
+                    <input
+                      type="date"
+                      required
+                      max={new Date().toISOString().split('T')[0]}
+                      value={birthDate}
+                      onChange={(e) => handleBirthDateChange(e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-xl border border-gray-300 dark:border-[#27304b] bg-white dark:bg-[#151926] text-xs font-mono font-bold text-gray-900 dark:text-white outline-hidden focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+                    />
                   </div>
 
-                  {/* Inline age validation message */}
                   {birthDate && (
                     <div className="text-[11px] font-semibold">
                       {calculateAge(birthDate) >= 18 ? (
@@ -798,7 +874,6 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
                     </div>
                   )}
 
-                  {/* Explicit 18+ Checkbox Confirmation */}
                   <label className="flex items-start space-x-2.5 pt-1 cursor-pointer select-none">
                     <input
                       type="checkbox"
@@ -817,7 +892,6 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
                   </label>
                 </div>
 
-                {/* Final Submit Button */}
                 <button
                   type="submit"
                   disabled={!isRegisterStep2Valid}
@@ -827,9 +901,218 @@ export const FanLoginPage: React.FC<FanLoginPageProps> = ({
                       : 'bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed'
                   }`}
                 >
-                  Finaliser mon inscription (+18)
+                  Continuer vers la vérification 2FA & Pièce d'identité (3/3)
                 </button>
               </form>
+            </div>
+          ) : (
+            /* ======================================================= */
+            /* MODE 2 - STEP 3 : 2FA & ID VERIFICATION (SUPER FAN)     */
+            /* ======================================================= */
+            <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+              {/* Back to Step 2 Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setRegisterStep('profile');
+                  sounds.playReceive();
+                }}
+                className="flex items-center space-x-1.5 text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors mb-3 cursor-pointer"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Modifier mes informations de profil</span>
+              </button>
+
+              <div className="mb-4">
+                <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-pink-500 text-white text-[10px] font-black uppercase tracking-wider mb-2 shadow-xs">
+                  <Star className="w-3 h-3 fill-white" />
+                  <span>Étape 3 sur 3 • Badge Super Fan & Vérifié</span>
+                </div>
+                <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">
+                  Vérification 2FA & Pièce d'identité
+                </h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  Faites vérifier votre identité pour obtenir le badge <strong>Super Fan ⭐</strong> officiel.
+                </p>
+              </div>
+
+              {/* VIP Benefits Box */}
+              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-500/10 via-pink-500/10 to-purple-500/10 border border-amber-500/30 space-y-2 mb-4">
+                <div className="flex items-center space-x-2 text-xs font-black text-amber-800 dark:text-amber-300">
+                  <Sparkles className="w-4 h-4 text-amber-500" />
+                  <span>Avantages du Profil Super Fan Certifié :</span>
+                </div>
+                <div className="space-y-1.5 text-[11px] text-gray-700 dark:text-gray-300">
+                  <div className="flex items-center space-x-2">
+                    <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-[10px]">✓</span>
+                    <span><strong>Badge "Super Fan ⭐"</strong> affiché en direct auprès de Margot et des créateurs.</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-[10px]">✓</span>
+                    <span>Priorité haute dans la file de réponse des messages 1-à-1 et des lives.</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-[10px]">✓</span>
+                    <span>Protection biométrique & 2FA maximale contre l'usurpation de compte.</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {/* ID Document Selection Tabs */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
+                    1. Choisissez le type de pièce d'identité officielle
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: 'cni', label: 'Carte d\'identité', icon: '🪪' },
+                      { id: 'passport', label: 'Passeport', icon: '🛂' },
+                      { id: 'driving_license', label: 'Permis de conduire', icon: '🚗' },
+                    ].map((tab) => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => {
+                          setDocType(tab.id as any);
+                          sounds.playReceive();
+                        }}
+                        className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
+                          docType === tab.id
+                            ? 'border-[#ec4899] bg-pink-500/10 text-pink-600 dark:text-pink-300 font-bold shadow-xs'
+                            : 'border-gray-200 dark:border-[#27304b] bg-gray-50 dark:bg-[#151926] text-gray-600 dark:text-gray-400 hover:border-gray-300'
+                        }`}
+                      >
+                        <div className="text-base mb-0.5">{tab.icon}</div>
+                        <div className="text-[10px] leading-tight truncate">{tab.label}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* ID Document Upload Dropzone */}
+                <div className="p-3.5 rounded-2xl bg-gray-50 dark:bg-[#151926] border-2 border-dashed border-gray-300 dark:border-[#2d3755] space-y-2.5 text-center">
+                  <div className="w-10 h-10 mx-auto rounded-full bg-pink-500/10 text-[#ec4899] flex items-center justify-center">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-gray-800 dark:text-gray-200 block">
+                      Téléversez votre pièce d'identité (+18)
+                    </span>
+                    <span className="text-[10px] text-gray-400 block mt-0.5">
+                      JPG, PNG ou PDF (Format officiel lisible et net)
+                    </span>
+                  </div>
+
+                  <input
+                    ref={idFileInputRef}
+                    type="file"
+                    accept="image/*,application/pdf"
+                    onChange={handleIdDocumentUpload}
+                    className="hidden"
+                  />
+
+                  {docFileName ? (
+                    <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800/40 flex items-center justify-between text-xs text-emerald-800 dark:text-emerald-300">
+                      <div className="flex items-center space-x-2 truncate">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                        <span className="truncate font-semibold">{docFileName}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => idFileInputRef.current?.click()}
+                        className="text-[10px] text-emerald-600 dark:text-emerald-400 hover:underline flex-shrink-0 ml-2"
+                      >
+                        Changer
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => idFileInputRef.current?.click()}
+                        className="w-full sm:w-auto px-4 py-2 rounded-xl bg-white dark:bg-[#1f263d] border border-gray-300 dark:border-[#333f63] text-gray-800 dark:text-gray-200 font-bold text-xs hover:border-[#ec4899] transition-all cursor-pointer shadow-xs flex items-center justify-center space-x-1.5"
+                      >
+                        <Upload className="w-3.5 h-3.5 text-[#ec4899]" />
+                        <span>Sélectionner le document</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleUseDemoIdSpecimen}
+                        className="w-full sm:w-auto px-3 py-2 rounded-xl bg-pink-500/10 hover:bg-pink-500/20 text-[#ec4899] font-bold text-xs transition-colors cursor-pointer"
+                      >
+                        ⚡ Utiliser spécimen démo
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* 2FA Security Code Verification */}
+                <div className="p-3.5 rounded-2xl bg-gray-50 dark:bg-[#151926] border border-gray-200 dark:border-[#27304b] space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <KeyRound className="w-4 h-4 text-[#ec4899]" />
+                      <span className="text-xs font-bold text-gray-800 dark:text-gray-200">
+                        2. Code de sécurité 2FA à 6 chiffres
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSend2FACode}
+                      className="text-[10px] font-bold text-[#ec4899] hover:underline flex items-center space-x-1 cursor-pointer"
+                    >
+                      <Smartphone className="w-3 h-3" />
+                      <span>{twoFactorSent ? 'Code envoyé (742819)' : 'Simuler code 2FA'}</span>
+                    </button>
+                  </div>
+
+                  <div className="relative">
+                    <input
+                      type="text"
+                      maxLength={6}
+                      placeholder="Ex: 742819"
+                      value={twoFactorCode}
+                      onChange={(e) => {
+                        setTwoFactorCode(e.target.value.replace(/[^0-9]/g, ''));
+                        setVerificationError(null);
+                      }}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-[#27304b] bg-white dark:bg-[#1c2236] text-center font-mono text-base font-black tracking-widest text-gray-900 dark:text-white outline-hidden focus:border-[#ec4899] focus:ring-2 focus:ring-[#ec4899]/20"
+                    />
+                  </div>
+
+                  <p className="text-[10px] text-gray-400 text-center">
+                    Un code de confirmation temporaire à usage unique vous est adressé par SMS ou email sécurisé.
+                  </p>
+                </div>
+
+                {verificationError && (
+                  <div className="text-[11px] text-rose-600 dark:text-rose-400 font-bold bg-rose-50 dark:bg-rose-950/40 p-2.5 rounded-xl border border-rose-200 dark:border-rose-800 flex items-center space-x-2">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    <span>{verificationError}</span>
+                  </div>
+                )}
+
+                {/* Primary Action Button: Validate & Get Super Fan Badge */}
+                <button
+                  type="button"
+                  onClick={() => handleFinalizeWithVerification(true)}
+                  className="w-full py-3.5 rounded-full text-xs font-black uppercase tracking-wider transition-all duration-200 cursor-pointer bg-gradient-to-r from-amber-500 via-[#ec4899] to-[#8b5cf6] hover:opacity-95 text-white shadow-lg shadow-pink-500/25 active:scale-98 flex items-center justify-center space-x-2"
+                >
+                  <Star className="w-4 h-4 fill-white" />
+                  <span>Vérifier mon identité & Activer le Badge Super Fan ⭐</span>
+                </button>
+
+                {/* Skip / Secondary Action: Continue as Standard Member */}
+                <div className="text-center pt-1">
+                  <button
+                    type="button"
+                    onClick={() => handleFinalizeWithVerification(false)}
+                    className="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 text-xs font-semibold hover:underline cursor-pointer transition-colors"
+                  >
+                    Passer cette étape pour le moment (Continuer en membre standard)
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>

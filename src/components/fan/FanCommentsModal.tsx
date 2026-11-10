@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Send, Heart, MessageCircle } from 'lucide-react';
+import { X, Send, Heart, MessageCircle, Star, CheckCircle2 } from 'lucide-react';
 import { sounds } from '../../utils/sound';
 import type { FanUser, CreatorPost } from '../../types/crm';
 
@@ -8,6 +8,8 @@ interface CommentItem {
   authorName: string;
   authorAvatar: string;
   isVIP?: boolean;
+  isSuperFan?: boolean;
+  isVerified?: boolean;
   text: string;
   timestamp: string;
   likesCount: number;
@@ -28,6 +30,8 @@ const INITIAL_COMMENTS: CommentItem[] = [
     authorName: 'Alexandre VIP',
     authorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80',
     isVIP: true,
+    isSuperFan: true,
+    isVerified: true,
     text: 'Sublime comme d’habitude Margot ! Le shooting est juste incroyable ❤️',
     timestamp: 'Il y a 1 heure',
     likesCount: 14,
@@ -92,6 +96,8 @@ export const FanCommentsModal: React.FC<FanCommentsModalProps> = ({
       authorName: fanUser.name || 'Valentin',
       authorAvatar: fanUser.avatar,
       isVIP: fanUser.isSubscribed,
+      isSuperFan: fanUser.isSuperFan,
+      isVerified: fanUser.isVerified,
       text: newComment.trim(),
       timestamp: 'À l’instant',
       likesCount: 0,
@@ -148,15 +154,25 @@ export const FanCommentsModal: React.FC<FanCommentsModalProps> = ({
               />
 
               <div className="flex-1">
-                <div className="flex items-center space-x-2 mb-0.5">
+                <div className="flex items-center space-x-1.5 mb-0.5">
                   <span className="font-bold text-gray-900 dark:text-white">
                     {comment.authorName}
                   </span>
-                  {comment.isVIP && (
+                  {comment.isSuperFan ? (
+                    <span className="flex items-center space-x-0.5 px-1.5 py-0.2 rounded-full bg-gradient-to-r from-amber-500 to-pink-500 text-white font-black text-[8px] shadow-xs">
+                      <Star className="w-2 h-2 fill-white" />
+                      <span>Super Fan</span>
+                    </span>
+                  ) : comment.isVerified ? (
+                    <span className="flex items-center space-x-0.5 px-1.5 py-0.2 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30 font-bold text-[8px]">
+                      <CheckCircle2 className="w-2 h-2" />
+                      <span>Vérifié</span>
+                    </span>
+                  ) : comment.isVIP ? (
                     <span className="px-1.5 py-0.2 rounded-full bg-pink-500 text-white font-black text-[8px]">
                       VIP
                     </span>
-                  )}
+                  ) : null}
                   <span className="text-[10px] text-gray-400">{comment.timestamp}</span>
                 </div>
 
