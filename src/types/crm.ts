@@ -141,6 +141,8 @@ export interface ToastMessage {
 export interface FanUser {
   id: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
   username: string;
   email?: string;
   avatar: string;
@@ -148,6 +150,8 @@ export interface FanUser {
   isSubscribed: boolean;
   subscriptionTier?: 'free' | 'monthly' | 'quarterly' | 'vip';
   unlockedMediaIds: string[];
+  birthDate?: string;
+  isOver18?: boolean;
 }
 
 export interface CreatorPost {
