@@ -20,7 +20,8 @@ import {
   Layers,
   ShoppingBag,
   Star,
-  Film
+  Film,
+  Settings
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { sounds } from '../../utils/sound';
@@ -35,6 +36,7 @@ import { FanCommentsModal } from './FanCommentsModal';
 import { FanShopView } from './FanShopView';
 import { FanSexTapeView } from './FanSexTapeView';
 import { FanVerificationModal } from './FanVerificationModal';
+import { FanProfileSettingsModal } from './FanProfileSettingsModal';
 import { INITIAL_SHOP_ITEMS } from '../../data/shopData';
 
 interface FanPortalProps {
@@ -49,7 +51,7 @@ interface FanPortalProps {
   onSendTip: (amount: number, message: string) => void;
   onSubscribe: (tier: 'free' | 'monthly' | 'quarterly' | 'vip', price: number) => void;
   onTopUpWallet: (amount: number) => void;
-  onUpdateFanUser?: (user: FanUser) => void;
+  onUpdateFanUser?: (user: FanUser, message?: string) => void;
   onOpenLightbox: (url: string, title?: string, price?: number) => void;
   darkMode: boolean;
   onToggleDarkMode: () => void;
@@ -85,6 +87,7 @@ export const FanPortal: React.FC<FanPortalProps> = ({
   const [isTipOpen, setIsTipOpen] = useState(false);
   const [isWalletOpen, setIsWalletOpen] = useState(false);
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
+  const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false);
   const [commentingPost, setCommentingPost] = useState<CreatorPost | null>(null);
 
   // Active creator state with reactive external synchronization
@@ -241,10 +244,19 @@ export const FanPortal: React.FC<FanPortalProps> = ({
             </button>
           </div>
 
-          {/* User Profile / Auth Button */}
+          {/* User Profile / Auth Button & Settings Trigger */}
           {fanUser.name ? (
-            <div className="flex items-center space-x-2 p-1 pl-2 rounded-xl bg-gray-100 dark:bg-[#1a2033] text-xs">
-              <span className="font-bold text-gray-800 dark:text-gray-200 hidden sm:inline">{fanUser.name}</span>
+            <button
+              onClick={() => {
+                setIsProfileSettingsOpen(true);
+                sounds.playReceive();
+              }}
+              title="Cliquez pour gérer votre profil et vos abonnements"
+              className="flex items-center space-x-2 p-1 pl-2.5 pr-2 rounded-xl bg-gray-100 hover:bg-gray-200/80 dark:bg-[#1a2033] dark:hover:bg-[#232b45] border border-gray-200 dark:border-[#2b3352] text-xs transition-all cursor-pointer group active:scale-95 shadow-2xs"
+            >
+              <span className="font-bold text-gray-800 dark:text-gray-200 hidden sm:inline group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">
+                {fanUser.name}
+              </span>
               {fanUser.isSuperFan ? (
                 <span className="flex items-center space-x-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-pink-500 text-white font-black text-[9px] shadow-xs">
                   <Star className="w-2.5 h-2.5 fill-white" />
@@ -258,20 +270,23 @@ export const FanPortal: React.FC<FanPortalProps> = ({
               ) : fanUser.isSubscribed ? (
                 <span className="px-1.5 py-0.2 rounded-full bg-pink-500 text-white font-black text-[9px]">VIP</span>
               ) : (
-                <button
-                  onClick={() => setIsVerificationOpen(true)}
+                <span
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsVerificationOpen(true);
+                  }}
                   title="Vérifier mon identité 2FA & obtenir le badge Super Fan"
                   className="px-2 py-0.5 rounded-full bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold text-[9px] flex items-center space-x-1 cursor-pointer transition-colors"
                 >
                   <Star className="w-2.5 h-2.5" />
                   <span>Devenir Super Fan</span>
-                </button>
+                </span>
               )}
               <div className="relative">
                 <img
                   src={fanUser.avatar}
                   alt={fanUser.name}
-                  className="w-6 h-6 rounded-full object-cover"
+                  className="w-6 h-6 rounded-full object-cover border border-white dark:border-[#1a2033]"
                 />
                 {fanUser.isSuperFan && (
                   <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-amber-500 flex items-center justify-center text-white">
@@ -279,7 +294,8 @@ export const FanPortal: React.FC<FanPortalProps> = ({
                   </span>
                 )}
               </div>
-            </div>
+              <Settings className="w-3.5 h-3.5 text-gray-400 group-hover:text-pink-500 transition-colors ml-0.5" />
+            </button>
           ) : (
             <button
               onClick={() => setIsAuthOpen(true)}
@@ -1376,6 +1392,23 @@ export const FanPortal: React.FC<FanPortalProps> = ({
           });
           setIsVerificationOpen(false);
           setActiveTab('chat');
+        }}
+      />
+
+      {/* Fan Account Profile & Subscription Settings Modal */}
+      <FanProfileSettingsModal
+        isOpen={isProfileSettingsOpen}
+        onClose={() => setIsProfileSettingsOpen(false)}
+        fanUser={fanUser}
+        onUpdateFanUser={onUpdateFanUser}
+        onSubscribe={onSubscribe}
+        onOpenWalletModal={() => {
+          setIsProfileSettingsOpen(false);
+          setIsWalletOpen(true);
+        }}
+        onOpenVerificationModal={() => {
+          setIsProfileSettingsOpen(false);
+          setIsVerificationOpen(true);
         }}
       />
     </div>

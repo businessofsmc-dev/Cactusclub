@@ -31,3 +31,4 @@ export interface SexTapeVideo {
   isUnlocked?: boolean;
   releaseDate: string;
 }
+

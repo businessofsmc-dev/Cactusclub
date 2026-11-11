@@ -227,11 +227,10 @@ export const FanSexTapeView: React.FC<FanSexTapeViewProps> = ({
                   setSelectedCategory(cat.id);
                   sounds.playReceive();
                 }}
-                className={`group flex items-center space-x-2 px-4 py-2.5 rounded-2xl text-xs font-black whitespace-nowrap transition-all duration-200 cursor-pointer border ${
-                  isSelected
+                className={`group flex items-center space-x-2 px-4 py-2.5 rounded-2xl text-xs font-black whitespace-nowrap transition-all duration-200 cursor-pointer border ${isSelected
                     ? 'bg-gradient-to-r from-red-600 to-pink-600 text-white border-transparent shadow-lg shadow-red-600/25 scale-[1.02]'
                     : 'bg-white dark:bg-[#131624] text-gray-700 dark:text-gray-300 border-gray-200 dark:border-[#1e2338] hover:border-red-500/50 hover:bg-gray-50 dark:hover:bg-[#181d30]'
-                }`}
+                  }`}
               >
                 {cat.id === 'anale' && <Flame className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-red-500'}`} />}
                 {cat.id === 'leche' && <Sparkles className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-amber-400'}`} />}
@@ -242,9 +241,8 @@ export const FanSexTapeView: React.FC<FanSexTapeViewProps> = ({
 
                 <span>{cat.label}</span>
                 <span
-                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono-numbers font-extrabold ${
-                    isSelected ? 'bg-white/20 text-white' : 'bg-gray-100 dark:bg-[#1f253d] text-gray-500 dark:text-gray-400'
-                  }`}
+                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono-numbers font-extrabold ${isSelected ? 'bg-white/20 text-white' : 'bg-gray-100 dark:bg-[#1f253d] text-gray-500 dark:text-gray-400'
+                    }`}
                 >
                   {count}
                 </span>
@@ -540,9 +538,8 @@ export const FanSexTapeView: React.FC<FanSexTapeViewProps> = ({
               <img
                 src={activeVideoModal.thumbnailUrl}
                 alt={activeVideoModal.title}
-                className={`w-full h-full object-cover transition-all duration-700 ${
-                  unlockedVideoIds[activeVideoModal.id] ? 'opacity-90' : 'blur-md opacity-40 scale-105'
-                }`}
+                className={`w-full h-full object-cover transition-all duration-700 ${unlockedVideoIds[activeVideoModal.id] ? 'opacity-90' : 'blur-md opacity-40 scale-105'
+                  }`}
               />
 
               {/* Locked Video Overlay with Unlock CTA */}
@@ -610,9 +607,8 @@ export const FanSexTapeView: React.FC<FanSexTapeViewProps> = ({
                         <button
                           key={res}
                           onClick={() => setSelectedResolution(res)}
-                          className={`px-2 py-0.5 rounded-lg transition-colors cursor-pointer ${
-                            selectedResolution === res ? 'bg-red-600 text-white' : 'text-gray-400 hover:text-white'
-                          }`}
+                          className={`px-2 py-0.5 rounded-lg transition-colors cursor-pointer ${selectedResolution === res ? 'bg-red-600 text-white' : 'text-gray-400 hover:text-white'
+                            }`}
                         >
                           {res}
                         </button>

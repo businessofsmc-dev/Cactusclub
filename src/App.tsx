@@ -1060,12 +1060,12 @@ function DashboardApp() {
   };
 
   // Fan updates profile / signs up
-  const handleUpdateFanUser = (user: FanUser) => {
+  const handleUpdateFanUser = (user: FanUser, message?: string) => {
     setFanUser(user);
     addToast({
       type: 'success',
-      title: `Bienvenue ${user.name} !`,
-      description: `Votre profil fan est prêt. Solde initial : $${user.walletBalance.toFixed(2)}`,
+      title: message || `Profil mis à jour !`,
+      description: `Vos modifications pour ${user.name} ont été enregistrées avec succès.`,
     });
   };
 
