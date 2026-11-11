@@ -9,7 +9,6 @@ import {
   FileText,
   Upload,
   KeyRound,
-  Smartphone,
   CreditCard,
   Globe,
   Car,
@@ -18,7 +17,13 @@ import {
   AlertCircle,
   MessageCircle,
   Camera,
-  RotateCcw
+  RotateCcw,
+  Mail,
+  Copy,
+  ShieldAlert,
+  Inbox,
+  FileCheck2,
+  Layers
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { sounds } from '../../utils/sound';
@@ -47,6 +52,9 @@ export const FanVerificationModal: React.FC<FanVerificationModalProps> = ({
   // Step 1: Identity & 2FA states
   const [docType, setDocType] = useState<'cni' | 'passport' | 'driving_license'>('cni');
 
+  // Format selection for CNI & Driving license: 'photos' (2 separate photos) vs 'pdf' (1 complete PDF with both sides)
+  const [cniFormat, setCniFormat] = useState<'photos' | 'pdf'>('photos');
+
   // Recto (Front / Page principale)
   const [docFrontUrl, setDocFrontUrl] = useState<string | null>(fanUser.idDocumentFrontUrl || null);
   const [docFrontName, setDocFrontName] = useState<string | null>(
@@ -59,8 +67,16 @@ export const FanVerificationModal: React.FC<FanVerificationModalProps> = ({
     fanUser.idDocumentStatus === 'verified' ? 'Piece_Verso_Verifiee.jpg' : null
   );
 
+  // Single PDF with both sides
+  const [docPdfUrl, setDocPdfUrl] = useState<string | null>(null);
+  const [docPdfName, setDocPdfName] = useState<string | null>(null);
+
+  // 2FA Email & Code state
+  const [generated2FACode, setGenerated2FACode] = useState<string>('742819');
   const [twoFactorCode, setTwoFactorCode] = useState('');
   const [twoFactorSent, setTwoFactorSent] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
   const [identityError, setIdentityError] = useState<string | null>(null);
 
   // Step 2: Banking states
@@ -74,11 +90,13 @@ export const FanVerificationModal: React.FC<FanVerificationModalProps> = ({
 
   const frontFileInputRef = useRef<HTMLInputElement>(null);
   const backFileInputRef = useRef<HTMLInputElement>(null);
+  const pdfFileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
   const creatorFirstName = creator.name.split(' ')[0];
   const requiresVerso = docType === 'cni' || docType === 'driving_license';
+  const recipientEmail = fanUser.email || 'alexandre@fan.cactusclub';
 
   const handleUploadFront = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -120,32 +138,77 @@ export const FanVerificationModal: React.FC<FanVerificationModalProps> = ({
     }
   };
 
+  const handleUploadPdf = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 20 * 1024 * 1024) {
+        setIdentityError('Fichier PDF trop volumineux (20 Mo maximum).');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setDocPdfUrl(event.target.result as string);
+          setDocPdfName(file.name);
+          setIdentityError(null);
+          sounds.playReceive();
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSend2FACode = () => {
+    const newCode = '742819';
+    setGenerated2FACode(newCode);
     setTwoFactorSent(true);
-    setTwoFactorCode('742819');
+    setIsEmailModalOpen(true);
     setIdentityError(null);
     sounds.playReceive();
+  };
+
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(generated2FACode);
+    setIsCopied(true);
+    sounds.playReceive();
+    setTimeout(() => setIsCopied(false), 2000);
+  };
+
+  const handleAutoFillCodeFromEmail = () => {
+    setTwoFactorCode(generated2FACode);
+    setIsEmailModalOpen(false);
+    sounds.playCash();
   };
 
   const handleIdentitySubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!docFrontName && !docFrontUrl) {
-      if (docType === 'passport') {
-        setIdentityError('Veuillez importer la page principale avec photo et signature de votre Passeport.');
+    if (requiresVerso) {
+      if (cniFormat === 'pdf') {
+        if (!docPdfName && !docPdfUrl) {
+          setIdentityError(`Veuillez importer le fichier PDF complet (recto-verso) de votre ${docType === 'cni' ? "Carte d'identité" : 'Permis de conduire'}.`);
+          return;
+        }
       } else {
-        setIdentityError(`Veuillez importer la face avant (Recto) de votre ${docType === 'cni' ? "Carte d'identité" : 'Permis de conduire'}.`);
+        if (!docFrontName && !docFrontUrl) {
+          setIdentityError(`Veuillez importer la face avant (Recto) de votre ${docType === 'cni' ? "Carte d'identité" : 'Permis de conduire'}.`);
+          return;
+        }
+        if (!docBackName && !docBackUrl) {
+          setIdentityError(`Veuillez importer la face arrière (Verso) de votre ${docType === 'cni' ? "Carte d'identité" : 'Permis de conduire'}.`);
+          return;
+        }
       }
-      return;
-    }
-
-    if (requiresVerso && !docBackName && !docBackUrl) {
-      setIdentityError(`Veuillez importer la face arrière (Verso) de votre ${docType === 'cni' ? "Carte d'identité" : 'Permis de conduire'}.`);
-      return;
+    } else {
+      // Passport
+      if (!docFrontName && !docFrontUrl) {
+        setIdentityError('Veuillez importer la page principale avec photo et signature de votre Passeport.');
+        return;
+      }
     }
 
     if (twoFactorCode.trim().length < 6) {
-      setIdentityError('Veuillez saisir le code de sécurité 2FA à 6 chiffres.');
+      setIdentityError('Veuillez saisir le code de sécurité 2FA à 6 chiffres envoyé par e-mail.');
       return;
     }
 
@@ -198,16 +261,18 @@ export const FanVerificationModal: React.FC<FanVerificationModalProps> = ({
       return;
     }
 
+    const isPdfMode = requiresVerso && cniFormat === 'pdf';
+
     const updatedUser: FanUser = {
       ...fanUser,
       isVerified: true,
       isSuperFan: true,
       idDocumentType: docType,
       idDocumentStatus: 'verified',
-      idDocumentFrontUrl: docFrontUrl || undefined,
-      idDocumentBackUrl: requiresVerso ? docBackUrl || undefined : undefined,
-      idDocumentFrontName: docFrontName || undefined,
-      idDocumentBackName: requiresVerso ? docBackName || undefined : undefined,
+      idDocumentFrontUrl: isPdfMode ? docPdfUrl || undefined : docFrontUrl || undefined,
+      idDocumentBackUrl: isPdfMode ? undefined : docBackUrl || undefined,
+      idDocumentFrontName: isPdfMode ? docPdfName || undefined : docFrontName || undefined,
+      idDocumentBackName: isPdfMode ? undefined : docBackName || undefined,
       hasPaymentMethod: true,
       cardHolderName: cardHolderName.trim(),
       cardLast4: rawDigits.slice(-4),
@@ -277,16 +342,18 @@ export const FanVerificationModal: React.FC<FanVerificationModalProps> = ({
           {/* 2-Step Progress Bar */}
           <div className="grid grid-cols-2 gap-2 mt-4">
             <div
-              className={`h-1.5 rounded-full transition-all ${step === 'identity'
+              className={`h-1.5 rounded-full transition-all ${
+                step === 'identity'
                   ? 'bg-gradient-to-r from-[#8b5cf6] to-[#ec4899]'
                   : 'bg-emerald-500'
-                }`}
+              }`}
             />
             <div
-              className={`h-1.5 rounded-full transition-all ${step === 'banking'
+              className={`h-1.5 rounded-full transition-all ${
+                step === 'banking'
                   ? 'bg-gradient-to-r from-[#ec4899] to-amber-500'
                   : 'bg-gray-200 dark:bg-gray-800'
-                }`}
+              }`}
             />
           </div>
         </div>
@@ -295,7 +362,7 @@ export const FanVerificationModal: React.FC<FanVerificationModalProps> = ({
         <div className="p-5 sm:p-6 overflow-y-auto space-y-4 flex-1">
           {step === 'identity' ? (
             /* ========================================================= */
-            /* STEP 1: DYNAMIC ID IMPORTATION (RECTO / VERSO) & 2FA      */
+            /* STEP 1: DYNAMIC ID IMPORTATION (RECTO/VERSO OU PDF) & 2FA */
             /* ========================================================= */
             <form onSubmit={handleIdentitySubmit} className="space-y-4">
               {/* Benefits Banner */}
@@ -323,9 +390,9 @@ export const FanVerificationModal: React.FC<FanVerificationModalProps> = ({
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { id: 'cni', label: "Carte d'identité", Icon: CreditCard, subtitle: 'Recto & Verso' },
+                    { id: 'cni', label: "Carte d'identité", Icon: CreditCard, subtitle: 'Recto-Verso ou PDF' },
                     { id: 'passport', label: 'Passeport', Icon: Globe, subtitle: 'Page principale' },
-                    { id: 'driving_license', label: 'Permis de conduire', Icon: Car, subtitle: 'Recto & Verso' },
+                    { id: 'driving_license', label: 'Permis de conduire', Icon: Car, subtitle: 'Recto-Verso ou PDF' },
                   ].map((tab) => {
                     const TabIcon = tab.Icon;
                     const isSelected = docType === tab.id;
@@ -338,10 +405,11 @@ export const FanVerificationModal: React.FC<FanVerificationModalProps> = ({
                           setIdentityError(null);
                           sounds.playReceive();
                         }}
-                        className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center ${isSelected
+                        className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center ${
+                          isSelected
                             ? 'border-[#ec4899] bg-pink-500/10 text-pink-600 dark:text-pink-300 font-bold shadow-xs'
                             : 'border-gray-200 dark:border-[#27304b] bg-gray-50 dark:bg-[#181d2f] text-gray-600 dark:text-gray-400 hover:border-gray-300'
-                          }`}
+                        }`}
                       >
                         <TabIcon className="w-4 h-4 mb-1" />
                         <span className="text-[11px] font-bold leading-tight truncate max-w-full">{tab.label}</span>
@@ -352,14 +420,51 @@ export const FanVerificationModal: React.FC<FanVerificationModalProps> = ({
                 </div>
               </div>
 
-              {/* 2. Dynamic Upload Component: Adapted for Selected Document */}
+              {/* 2. Format Selector & Dynamic Upload Component */}
               <div>
-                <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center justify-between mb-2">
                   <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">
-                    2. Importation des photos de votre {docType === 'cni' ? "Carte d'identité" : docType === 'passport' ? 'Passeport' : 'Permis de conduire'}
+                    2. Importation de votre {docType === 'cni' ? "Carte d'identité" : docType === 'passport' ? 'Passeport' : 'Permis de conduire'}
                   </label>
-                  <span className="text-[10px] text-gray-400">JPG, PNG ou PDF lisible</span>
                 </div>
+
+                {/* Sub-Format Switcher for CNI & Driving License: Photos (Recto/Verso) vs PDF complet */}
+                {requiresVerso && (
+                  <div className="grid grid-cols-2 p-1 mb-3 rounded-xl bg-gray-100 dark:bg-[#1a2034] text-xs font-bold border border-gray-200/80 dark:border-[#29324e]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCniFormat('photos');
+                        setIdentityError(null);
+                        sounds.playReceive();
+                      }}
+                      className={`py-1.5 px-2 rounded-lg transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
+                        cniFormat === 'photos'
+                          ? 'bg-white dark:bg-[#252c48] text-[#ec4899] shadow-xs'
+                          : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <Layers className="w-3.5 h-3.5" />
+                      <span>2 Photos (Recto & Verso)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCniFormat('pdf');
+                        setIdentityError(null);
+                        sounds.playReceive();
+                      }}
+                      className={`py-1.5 px-2 rounded-lg transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
+                        cniFormat === 'pdf'
+                          ? 'bg-white dark:bg-[#252c48] text-[#ec4899] shadow-xs'
+                          : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <FileCheck2 className="w-3.5 h-3.5 text-rose-500" />
+                      <span>Document PDF (2 faces réunies)</span>
+                    </button>
+                  </div>
+                )}
 
                 {/* Hidden input elements */}
                 <input
@@ -376,17 +481,25 @@ export const FanVerificationModal: React.FC<FanVerificationModalProps> = ({
                   onChange={handleUploadBack}
                   className="hidden"
                 />
+                <input
+                  ref={pdfFileInputRef}
+                  type="file"
+                  accept="application/pdf,image/*"
+                  onChange={handleUploadPdf}
+                  className="hidden"
+                />
 
-                {/* Conditional Layout: Dual Recto/Verso cards for CNI/Permis, or Single Wide card for Passport */}
-                {requiresVerso ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* VIEW A: DUAL RECTO/VERSO PHOTO CARDS */}
+                {requiresVerso && cniFormat === 'photos' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-in fade-in">
                     {/* ===== RECTO (Face avant) ===== */}
                     <div
                       onClick={() => frontFileInputRef.current?.click()}
-                      className={`relative rounded-2xl border-2 border-dashed p-3.5 transition-all cursor-pointer flex flex-col justify-between group ${docFrontName
+                      className={`relative rounded-2xl border-2 border-dashed p-3.5 transition-all cursor-pointer flex flex-col justify-between group ${
+                        docFrontName
                           ? 'border-emerald-500 bg-emerald-500/5 dark:bg-emerald-950/20'
                           : 'border-gray-300 dark:border-[#2b3552] bg-gray-50 dark:bg-[#181d2f] hover:border-[#ec4899] hover:bg-pink-500/5'
-                        }`}
+                      }`}
                     >
                       <div className="flex items-center justify-between mb-2">
                         <span className="px-2 py-0.5 rounded-md bg-[#8b5cf6]/15 text-[#8b5cf6] dark:text-[#a78bfa] font-black text-[9px] uppercase tracking-wider">
@@ -411,7 +524,7 @@ export const FanVerificationModal: React.FC<FanVerificationModalProps> = ({
                           <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-[#8b5cf6] flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
                             {docFrontName ? <FileText className="w-4 h-4 text-emerald-500" /> : <Camera className="w-4 h-4" />}
                           </div>
-                          <span className="text-xs font-bold text-gray-800 dark:text-gray-200">
+                          <span className="text-xs font-bold text-gray-800 dark:text-gray-200 truncate max-w-[200px]">
                             {docFrontName || 'Photo du Recto'}
                           </span>
                           <span className="text-[10px] text-gray-400 mt-0.5">
@@ -426,10 +539,11 @@ export const FanVerificationModal: React.FC<FanVerificationModalProps> = ({
                           e.stopPropagation();
                           frontFileInputRef.current?.click();
                         }}
-                        className={`w-full py-1.5 px-3 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center space-x-1 cursor-pointer ${docFrontName
+                        className={`w-full py-1.5 px-3 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center space-x-1 cursor-pointer ${
+                          docFrontName
                             ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'
                             : 'bg-white dark:bg-[#20273f] border border-gray-300 dark:border-[#323d5e] text-gray-700 dark:text-gray-200 hover:border-[#ec4899]'
-                          }`}
+                        }`}
                       >
                         {docFrontName ? <RotateCcw className="w-3 h-3" /> : <Upload className="w-3 h-3 text-[#ec4899]" />}
                         <span>{docFrontName ? 'Changer le Recto' : 'Importer le Recto'}</span>
@@ -439,10 +553,11 @@ export const FanVerificationModal: React.FC<FanVerificationModalProps> = ({
                     {/* ===== VERSO (Face arrière) ===== */}
                     <div
                       onClick={() => backFileInputRef.current?.click()}
-                      className={`relative rounded-2xl border-2 border-dashed p-3.5 transition-all cursor-pointer flex flex-col justify-between group ${docBackName
+                      className={`relative rounded-2xl border-2 border-dashed p-3.5 transition-all cursor-pointer flex flex-col justify-between group ${
+                        docBackName
                           ? 'border-emerald-500 bg-emerald-500/5 dark:bg-emerald-950/20'
                           : 'border-gray-300 dark:border-[#2b3552] bg-gray-50 dark:bg-[#181d2f] hover:border-[#ec4899] hover:bg-pink-500/5'
-                        }`}
+                      }`}
                     >
                       <div className="flex items-center justify-between mb-2">
                         <span className="px-2 py-0.5 rounded-md bg-[#ec4899]/15 text-[#ec4899] font-black text-[9px] uppercase tracking-wider">
@@ -467,7 +582,7 @@ export const FanVerificationModal: React.FC<FanVerificationModalProps> = ({
                           <div className="w-9 h-9 rounded-xl bg-pink-500/10 text-[#ec4899] flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
                             {docBackName ? <FileText className="w-4 h-4 text-emerald-500" /> : <Camera className="w-4 h-4" />}
                           </div>
-                          <span className="text-xs font-bold text-gray-800 dark:text-gray-200">
+                          <span className="text-xs font-bold text-gray-800 dark:text-gray-200 truncate max-w-[200px]">
                             {docBackName || 'Photo du Verso'}
                           </span>
                           <span className="text-[10px] text-gray-400 mt-0.5">
@@ -482,24 +597,85 @@ export const FanVerificationModal: React.FC<FanVerificationModalProps> = ({
                           e.stopPropagation();
                           backFileInputRef.current?.click();
                         }}
-                        className={`w-full py-1.5 px-3 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center space-x-1 cursor-pointer ${docBackName
+                        className={`w-full py-1.5 px-3 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center space-x-1 cursor-pointer ${
+                          docBackName
                             ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'
                             : 'bg-white dark:bg-[#20273f] border border-gray-300 dark:border-[#323d5e] text-gray-700 dark:text-gray-200 hover:border-[#ec4899]'
-                          }`}
+                        }`}
                       >
                         {docBackName ? <RotateCcw className="w-3 h-3" /> : <Upload className="w-3 h-3 text-[#ec4899]" />}
                         <span>{docBackName ? 'Changer le Verso' : 'Importer le Verso'}</span>
                       </button>
                     </div>
                   </div>
-                ) : (
-                  /* ===== PASSEPORT (Page principale unique) ===== */
+                )}
+
+                {/* VIEW B: SINGLE COMPLETE PDF COMPONENT */}
+                {requiresVerso && cniFormat === 'pdf' && (
                   <div
-                    onClick={() => frontFileInputRef.current?.click()}
-                    className={`relative rounded-2xl border-2 border-dashed p-4 transition-all cursor-pointer flex flex-col items-center text-center group ${docFrontName
+                    onClick={() => pdfFileInputRef.current?.click()}
+                    className={`relative rounded-2xl border-2 border-dashed p-4.5 transition-all cursor-pointer flex flex-col items-center text-center group animate-in fade-in ${
+                      docPdfName
                         ? 'border-emerald-500 bg-emerald-500/5 dark:bg-emerald-950/20'
                         : 'border-gray-300 dark:border-[#2b3552] bg-gray-50 dark:bg-[#181d2f] hover:border-[#ec4899] hover:bg-pink-500/5'
+                    }`}
+                  >
+                    <div className="w-full flex items-center justify-between mb-2">
+                      <span className="px-2.5 py-0.5 rounded-md bg-rose-500/15 text-rose-600 dark:text-rose-400 font-black text-[9px] uppercase tracking-wider flex items-center space-x-1">
+                        <FileCheck2 className="w-3 h-3" />
+                        <span>Fichier PDF Complet (2 faces)</span>
+                      </span>
+                      {docPdfName ? (
+                        <span className="flex items-center space-x-1 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>PDF importé</span>
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-rose-500 font-bold">* Requis</span>
+                      )}
+                    </div>
+
+                    <div className="py-2.5 flex flex-col items-center">
+                      <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+                        <FileText className="w-6 h-6" />
+                      </div>
+                      <span className="text-xs font-bold text-gray-800 dark:text-gray-200">
+                        {docPdfName || `Document PDF officiel de votre ${docType === 'cni' ? "Carte d'identité" : 'Permis de conduire'}`}
+                      </span>
+                      <span className="text-[10px] text-gray-400 mt-1 max-w-sm">
+                        {docPdfName
+                          ? 'Fichier PDF validé. Les 2 faces (recto et verso) seront vérifiées par notre système.'
+                          : 'Importez votre document PDF numérique comportant le recto et le verso réunis dans un seul fichier.'}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        pdfFileInputRef.current?.click();
+                      }}
+                      className={`mt-2 py-2 px-5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
+                        docPdfName
+                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'
+                          : 'bg-white dark:bg-[#20273f] border border-gray-300 dark:border-[#323d5e] text-gray-800 dark:text-gray-200 hover:border-[#ec4899] shadow-xs'
                       }`}
+                    >
+                      {docPdfName ? <RotateCcw className="w-3.5 h-3.5" /> : <Upload className="w-3.5 h-3.5 text-[#ec4899]" />}
+                      <span>{docPdfName ? 'Remplacer le document PDF' : 'Sélectionner mon fichier PDF (+18)'}</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* VIEW C: PASSEPORT (Page principale unique) */}
+                {!requiresVerso && (
+                  <div
+                    onClick={() => frontFileInputRef.current?.click()}
+                    className={`relative rounded-2xl border-2 border-dashed p-4 transition-all cursor-pointer flex flex-col items-center text-center group ${
+                      docFrontName
+                        ? 'border-emerald-500 bg-emerald-500/5 dark:bg-emerald-950/20'
+                        : 'border-gray-300 dark:border-[#2b3552] bg-gray-50 dark:bg-[#181d2f] hover:border-[#ec4899] hover:bg-pink-500/5'
+                    }`}
                   >
                     <div className="w-full flex items-center justify-between mb-2">
                       <span className="px-2.5 py-0.5 rounded-md bg-blue-500/15 text-blue-600 dark:text-blue-400 font-black text-[9px] uppercase tracking-wider">
@@ -539,10 +715,11 @@ export const FanVerificationModal: React.FC<FanVerificationModalProps> = ({
                         e.stopPropagation();
                         frontFileInputRef.current?.click();
                       }}
-                      className={`mt-2 py-2 px-5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${docFrontName
+                      className={`mt-2 py-2 px-5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
+                        docFrontName
                           ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'
                           : 'bg-white dark:bg-[#20273f] border border-gray-300 dark:border-[#323d5e] text-gray-800 dark:text-gray-200 hover:border-[#ec4899] shadow-xs'
-                        }`}
+                      }`}
                     >
                       {docFrontName ? <RotateCcw className="w-3.5 h-3.5" /> : <Upload className="w-3.5 h-3.5 text-[#ec4899]" />}
                       <span>{docFrontName ? 'Changer la page du passeport' : 'Importer la page principale du Passeport'}</span>
@@ -551,36 +728,65 @@ export const FanVerificationModal: React.FC<FanVerificationModalProps> = ({
                 )}
               </div>
 
-              {/* 3. 2FA Code Box */}
-              <div className="p-3.5 rounded-2xl bg-gray-50 dark:bg-[#181d2f] border border-gray-200 dark:border-[#27304b] space-y-2">
-                <div className="flex items-center justify-between">
+              {/* 3. 2FA Code Box with Email Template Trigger */}
+              <div className="p-4 rounded-2xl bg-gray-50 dark:bg-[#181d2f] border border-gray-200 dark:border-[#27304b] space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                   <div className="flex items-center space-x-2">
                     <KeyRound className="w-4 h-4 text-[#ec4899]" />
                     <span className="text-xs font-bold text-gray-800 dark:text-gray-200">
-                      3. Code d'authentification 2FA (6 chiffres)
+                      3. Code d'authentification 2FA envoyé par e-mail
                     </span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleSend2FACode}
-                    className="text-[10px] font-bold text-[#ec4899] hover:underline flex items-center space-x-1 cursor-pointer"
-                  >
-                    <Smartphone className="w-3 h-3" />
-                    <span>{twoFactorSent ? 'Code envoyé' : 'Recevoir le code 2FA'}</span>
-                  </button>
+
+                  <div className="flex items-center space-x-2">
+                    <button
+                      type="button"
+                      onClick={handleSend2FACode}
+                      className="text-[11px] font-bold text-[#ec4899] hover:underline flex items-center space-x-1 cursor-pointer"
+                    >
+                      <Mail className="w-3.5 h-3.5" />
+                      <span>{twoFactorSent ? 'Renvoyer l\'e-mail' : 'Envoyer mon code par e-mail'}</span>
+                    </button>
+
+                    {twoFactorSent && (
+                      <button
+                        type="button"
+                        onClick={() => setIsEmailModalOpen(true)}
+                        className="px-2.5 py-1 rounded-lg bg-pink-500/10 hover:bg-pink-500/20 text-[#ec4899] text-[10px] font-extrabold flex items-center space-x-1 cursor-pointer transition-colors"
+                        title="Voir l'e-mail officiel reçu"
+                      >
+                        <Inbox className="w-3 h-3" />
+                        <span>Ouvrir l'e-mail reçu</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                <input
-                  type="text"
-                  maxLength={6}
-                  placeholder="Saisissez le code à 6 chiffres"
-                  value={twoFactorCode}
-                  onChange={(e) => {
-                    setTwoFactorCode(e.target.value.replace(/[^0-9]/g, ''));
-                    setIdentityError(null);
-                  }}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-[#27304b] bg-white dark:bg-[#131624] text-center font-mono text-base font-black tracking-widest text-gray-900 dark:text-white outline-hidden focus:border-[#ec4899] focus:ring-2 focus:ring-[#ec4899]/20"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    maxLength={6}
+                    placeholder="Saisissez le code à 6 chiffres reçu par e-mail"
+                    value={twoFactorCode}
+                    onChange={(e) => {
+                      setTwoFactorCode(e.target.value.replace(/[^0-9]/g, ''));
+                      setIdentityError(null);
+                    }}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-[#27304b] bg-white dark:bg-[#131624] text-center font-mono text-base font-black tracking-widest text-gray-900 dark:text-white outline-hidden focus:border-[#ec4899] focus:ring-2 focus:ring-[#ec4899]/20"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between text-[10px] text-gray-500 dark:text-gray-400">
+                  <span>Destinataire : <strong className="text-gray-800 dark:text-gray-200">{recipientEmail}</strong></span>
+                  {twoFactorSent ? (
+                    <span className="text-emerald-500 font-semibold flex items-center space-x-1">
+                      <Check className="w-3 h-3" />
+                      <span>E-mail envoyé avec succès</span>
+                    </span>
+                  ) : (
+                    <span>Cliquez ci-dessus pour recevoir votre e-mail de sécurité.</span>
+                  )}
+                </div>
               </div>
 
               {identityError && (
@@ -737,10 +943,11 @@ export const FanVerificationModal: React.FC<FanVerificationModalProps> = ({
                         key={amt}
                         type="button"
                         onClick={() => setInitialTopUp(amt)}
-                        className={`py-2 rounded-xl text-xs font-mono font-bold border transition-all cursor-pointer ${isSelected
+                        className={`py-2 rounded-xl text-xs font-mono font-bold border transition-all cursor-pointer ${
+                          isSelected
                             ? 'border-[#ec4899] bg-pink-500/15 text-[#ec4899] shadow-2xs'
                             : 'border-gray-200 dark:border-[#27304b] bg-white dark:bg-[#131624] text-gray-600 dark:text-gray-300'
-                          }`}
+                        }`}
                       >
                         {amt === 0 ? '0 $' : `+$${amt}`}
                       </button>
@@ -780,6 +987,137 @@ export const FanVerificationModal: React.FC<FanVerificationModalProps> = ({
           )}
         </div>
       </div>
+
+      {/* ========================================================= */}
+      {/* REALISTIC OFFICIAL CACTUSCLUB EMAIL INBOX TEMPLATE MODAL  */}
+      {/* ========================================================= */}
+      {isEmailModalOpen && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in select-none">
+          <div className="w-full max-w-lg bg-white dark:bg-[#111422] rounded-3xl shadow-2xl border border-gray-200 dark:border-[#29324e] overflow-hidden flex flex-col max-h-[92vh]">
+            {/* Email Client Header bar */}
+            <div className="px-5 py-3.5 bg-gray-100 dark:bg-[#181d30] border-b border-gray-200 dark:border-[#252d47] flex items-center justify-between text-xs">
+              <div className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 font-bold">
+                <Mail className="w-4 h-4 text-[#ec4899]" />
+                <span>Messagerie • 1 nouveau message de sécurité</span>
+              </div>
+              <button
+                onClick={() => setIsEmailModalOpen(false)}
+                className="p-1 rounded-lg hover:bg-gray-200 dark:hover:bg-white/10 text-gray-400 hover:text-gray-700 dark:hover:text-white cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Email Meta Information */}
+            <div className="px-5 py-3.5 bg-gray-50 dark:bg-[#14192b] border-b border-gray-200/70 dark:border-[#20273e] text-xs space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="font-black text-gray-900 dark:text-white text-sm">
+                  🔒 Votre code d'authentification 2FA Cactusclub
+                </span>
+                <span className="text-[10px] text-gray-400 font-medium">À l'instant</span>
+              </div>
+              <div className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center justify-between">
+                <span>De : <strong className="text-gray-800 dark:text-gray-200">Cactusclub Security</strong> &lt;securite@cactusclub.agency&gt;</span>
+              </div>
+              <div className="text-[11px] text-gray-500 dark:text-gray-400">
+                À : <span className="font-semibold text-gray-700 dark:text-gray-300">{recipientEmail}</span>
+              </div>
+            </div>
+
+            {/* HTML Email Template Body */}
+            <div className="p-6 overflow-y-auto space-y-5 bg-white dark:bg-[#0f121e]">
+              {/* Cactusclub Official Brand Banner */}
+              <div className="p-5 rounded-2xl bg-gradient-to-r from-[#7e22ce] via-[#a21caf] to-[#ec4899] text-white flex items-center justify-between shadow-md">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center font-black text-lg text-[#ec4899] shadow-sm">
+                    CC
+                  </div>
+                  <div>
+                    <h3 className="font-black text-base tracking-tight leading-tight">Cactusclub</h3>
+                    <span className="text-[9px] uppercase tracking-widest text-white/80 block font-bold">
+                      VIP Creator Network
+                    </span>
+                  </div>
+                </div>
+                <div className="px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-xs border border-white/25 text-[10px] font-black uppercase tracking-wider">
+                  Sécurité 2FA
+                </div>
+              </div>
+
+              {/* Personalized Email Text */}
+              <div className="space-y-3 text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
+                <p className="font-bold text-sm text-gray-900 dark:text-white">
+                  Bonjour {fanUser.name || 'Cher Membre'},
+                </p>
+
+                <p>
+                  Vous avez initié une procédure de vérification d'identité pour certifier votre profil et débloquer les échanges privés en direct avec <strong>{creator.name}</strong> sur Cactusclub.
+                </p>
+
+                <p>
+                  Veuillez utiliser votre code de sécurité confidentiel à usage unique pour confirmer votre authentification à 2 facteurs :
+                </p>
+              </div>
+
+              {/* Huge 6-Digit Code Display */}
+              <div className="p-5 rounded-2xl bg-gray-50 dark:bg-[#161b2e] border border-gray-200 dark:border-[#2a3452] text-center space-y-3 shadow-inner">
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-gray-400 block">
+                  Votre Code de Confirmation à 6 chiffres
+                </span>
+
+                <div className="flex items-center justify-center space-x-2 font-mono text-2xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-widest py-1">
+                  {generated2FACode.split('').map((digit, idx) => (
+                    <span
+                      key={idx}
+                      className="w-10 h-12 rounded-xl bg-white dark:bg-[#1f263e] border border-gray-200 dark:border-[#38456b] flex items-center justify-center shadow-xs text-[#ec4899]"
+                    >
+                      {digit}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={handleAutoFillCodeFromEmail}
+                    className="w-full sm:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold text-xs shadow-md shadow-emerald-500/20 active:scale-95 transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Insérer automatiquement ce code</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCopyCode}
+                    className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-white dark:bg-[#20273f] border border-gray-300 dark:border-[#354166] text-gray-800 dark:text-gray-200 font-bold text-xs hover:border-[#ec4899] active:scale-95 transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+                  >
+                    {isCopied ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{isCopied ? 'Code copié !' : 'Copier le code'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Security Advisory */}
+              <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-800 dark:text-amber-300 space-y-1">
+                <div className="flex items-center space-x-1.5 font-bold">
+                  <ShieldAlert className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                  <span>Consignes de sécurité Cactusclub :</span>
+                </div>
+                <ul className="list-disc pl-5 space-y-0.5 text-[10px] text-gray-600 dark:text-gray-400">
+                  <li>Ce code expire automatiquement dans 10 minutes.</li>
+                  <li>Ne le communiquez à personne : l'équipe Cactusclub ne vous demandera jamais ce code.</li>
+                </ul>
+              </div>
+
+              {/* Email Footer */}
+              <div className="pt-3 border-t border-gray-100 dark:border-white/10 text-center text-[10px] text-gray-400 space-y-1">
+                <p>Cactusclub Global Network Ltd. • Plateforme réservée aux membres majeurs (+18 ans).</p>
+                <p>Protégé par cryptage SSL 256 bits • Confidentialité bancaire et personnelle 100% garantie.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
