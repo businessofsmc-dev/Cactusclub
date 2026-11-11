@@ -157,6 +157,9 @@ export interface FanUser {
   idDocumentType?: 'cni' | 'passport' | 'driving_license';
   idDocumentStatus?: 'verified' | 'pending' | 'none';
   idDocumentFrontUrl?: string;
+  idDocumentBackUrl?: string;
+  idDocumentFrontName?: string;
+  idDocumentBackName?: string;
   hasPaymentMethod?: boolean;
   cardHolderName?: string;
   cardLast4?: string;
