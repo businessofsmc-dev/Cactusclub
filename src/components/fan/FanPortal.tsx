@@ -19,7 +19,8 @@ import {
   Home,
   Layers,
   ShoppingBag,
-  Star
+  Star,
+  Film
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { sounds } from '../../utils/sound';
@@ -32,6 +33,7 @@ import { FanTipModal } from './FanTipModal';
 import { FanWalletModal } from './FanWalletModal';
 import { FanCommentsModal } from './FanCommentsModal';
 import { FanShopView } from './FanShopView';
+import { FanSexTapeView } from './FanSexTapeView';
 import { FanVerificationModal } from './FanVerificationModal';
 import { INITIAL_SHOP_ITEMS } from '../../data/shopData';
 
@@ -70,7 +72,7 @@ export const FanPortal: React.FC<FanPortalProps> = ({
   darkMode,
   onToggleDarkMode,
 }) => {
-  const [activeTab, setActiveTab] = useState<'posts' | 'creators' | 'shop' | 'feed' | 'chat' | 'subscribe'>('posts');
+  const [activeTab, setActiveTab] = useState<'posts' | 'creators' | 'shop' | 'feed' | 'chat' | 'subscribe' | 'sextapes'>('posts');
   const [posts, setPosts] = useState<CreatorPost[]>(INITIAL_CREATOR_POSTS);
 
   // Scroll references
@@ -523,17 +525,38 @@ export const FanPortal: React.FC<FanPortalProps> = ({
             <span>Profil & Publications ({activeCreator.name.split(' ')[0]}) ({displayedPosts.length})</span>
           </button>
 
+          {/* BOUTIQUE SEX TAPES VIP (Requested by user: replaces "Discussion Privée") */}
           <button
-            onClick={() => handleStartChatWithCreator(activeCreator.id)}
-            className={`py-3 px-3.5 border-b-2 transition-all cursor-pointer flex items-center space-x-2 flex-shrink-0 ${activeTab === 'chat'
-              ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-500/5'
+            onClick={() => {
+              setActiveTab('sextapes');
+              sounds.playReceive();
+              setTimeout(() => {
+                mainScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+              }, 30);
+            }}
+            className={`py-3 px-3.5 border-b-2 transition-all cursor-pointer flex items-center space-x-2 flex-shrink-0 ${activeTab === 'sextapes'
+              ? 'border-red-500 text-red-500 dark:text-red-400 bg-red-50/50 dark:bg-red-500/10 font-extrabold'
               : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               }`}
           >
-            <MessageCircle className="w-4 h-4 text-emerald-500" />
-            <span>Discussion Privée</span>
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <Film className="w-4 h-4 text-red-500" />
+            <span>Sex Tape</span>
+            <span className="px-1.5 py-0.2 rounded-full bg-gradient-to-r from-red-600 to-pink-600 text-white font-black text-[9px] uppercase tracking-wider animate-pulse">
+              18+
+            </span>
           </button>
+
+          {/* Active Chat indicator tab only shown if currently chatting */}
+          {activeTab === 'chat' && (
+            <button
+              onClick={() => {}}
+              className="py-3 px-3.5 border-b-2 transition-all cursor-pointer flex items-center space-x-2 flex-shrink-0 border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-500/5 font-extrabold"
+            >
+              <MessageCircle className="w-4 h-4 text-emerald-500" />
+              <span>Discussion Privée ({activeCreator.name.split(' ')[0]})</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            </button>
+          )}
 
           <button
             onClick={() => {
@@ -874,6 +897,18 @@ export const FanPortal: React.FC<FanPortalProps> = ({
             onOpenWalletModal={() => setIsWalletOpen(true)}
             onStartChatWithCreator={(cId) => handleStartChatWithCreator(cId)}
             onOpenLightbox={onOpenLightbox}
+          />
+        )}
+
+        {/* VIEW: SEX TAPES VIP (Boutique de Vidéos Privées & 4K Catégorisées 18+) */}
+        {activeTab === 'sextapes' && (
+          <FanSexTapeView
+            fanUser={fanUser}
+            onTopUpWallet={onTopUpWallet}
+            onOpenWalletModal={() => setIsWalletOpen(true)}
+            onStartChatWithCreator={(cId) => handleStartChatWithCreator(cId)}
+            creators={creators}
+            activeCreatorId={activeCreator.id}
           />
         )}
 
